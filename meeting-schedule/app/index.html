@@ -1,0 +1,1922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta charset="utf-8">
+<title>MeetingSchedule.app</title>
+<link rel="canonical" href="https://meetingschedule.app/app/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Roboto+Condensed:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,700;1,8..60,400&family=Libre+Franklin:ital,wght@0,400;0,700;1,400&family=Merriweather:ital,wght@0,400;0,700;1,400&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Oswald:wght@500;600&display=swap">
+<style id="pageSize">@page { size: 11in 8.5in; margin: 0 }</style>
+<style>
+/* Layout: a paste-up desk. Controls sit on a narrow rail at left; finished sheets are laid out on a green cutting mat at right, exactly as they will print. */
+:root {
+  --bg: #e7ebe9;
+  --panel: #f7f9f8;
+  --fg: #17201d;
+  --muted: #5a6a64;
+  --line: #d1d9d5;
+  --field: #ffffff;
+  --chip: #e1e9e5;
+  --accent: #1d6a57;
+  --accent-fg: #ffffff;
+  --mat: #2b4a40;
+  --mat-grid: rgba(255, 255, 255, 0.07);
+  --mat-ink: #cfe2da;
+  --warn: #b0500c;
+  --ok: #1d6a57;
+  --ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111715; --panel: #18201d; --fg: #e2eae6; --muted: #93a49d; --line: #2a3530;
+    --field: #0f1513; --chip: #22302a; --accent: #5fbfa2; --accent-fg: #0b1512;
+    --mat: #0d1d18; --mat-grid: rgba(255, 255, 255, 0.05); --mat-ink: #a9c4b9;
+    --warn: #f0a25a; --ok: #5fbfa2; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111715; --panel: #18201d; --fg: #e2eae6; --muted: #93a49d; --line: #2a3530;
+  --field: #0f1513; --chip: #22302a; --accent: #5fbfa2; --accent-fg: #0b1512;
+  --mat: #0d1d18; --mat-grid: rgba(255, 255, 255, 0.05); --mat-ink: #a9c4b9;
+  --warn: #f0a25a; --ok: #5fbfa2; color-scheme: dark;
+}
+
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--ui); }
+* { box-sizing: border-box; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { display: grid; grid-template-columns: minmax(320px, 400px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.topbar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 10px 16px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+.brand h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+.brand small { font: 12px var(--mono); color: var(--muted); }
+.brand h1 a { color: inherit; text-decoration: none; }
+.brand .guide-link { font-size: 13px; color: var(--accent); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; background: var(--chip); font-size: 12px; max-width: 100%; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.pill.live::before { background: var(--ok); }
+.pill.sample::before { background: var(--warn); }
+.pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.meta { font: 12px var(--mono); color: var(--muted); }
+
+.side { overflow: auto; background: var(--panel); border-right: 1px solid var(--line); min-width: 0; }
+.tabs { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 4px; padding: 12px 16px 10px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.tab { border: 1px solid transparent; background: none; color: var(--muted); font: 500 13px var(--ui); padding: 5px 10px; border-radius: 6px; cursor: pointer; }
+.tab:hover { color: var(--fg); background: var(--chip); }
+.tab[aria-selected="true"] { color: var(--fg); background: var(--chip); border-color: var(--line); }
+.panel { display: grid; gap: 16px; padding: 16px 16px 32px; }
+.panel h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.panel p.help { margin: -8px 0 0; color: var(--muted); font-size: 13px; }
+.field { display: grid; gap: 5px; min-width: 0; }
+.lbl { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+input[type="text"], input[type="url"], input[type="number"], input[type="search"], select, textarea {
+  width: 100%; min-width: 0; font: 14px var(--ui); color: var(--fg); background: var(--field);
+  border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;
+}
+textarea { font: 13px/1.5 var(--mono); resize: vertical; min-height: 84px; }
+input[type="email"], input[type="password"] { width: 100%; min-width: 0; font: 14px var(--ui); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; }
+.stack { display: grid; gap: 16px; }
+.seg { display: flex; gap: 4px; padding: 3px; background: var(--chip); border-radius: 8px; }
+.seg button { flex: 1; border: 0; background: none; color: var(--muted); font: 500 13px var(--ui); padding: 6px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--panel); color: var(--fg); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+.linkbtn { border: 0; background: none; padding: 0; color: var(--accent); font: 13px var(--ui); cursor: pointer; text-align: left; justify-self: start; }
+.mylists { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.mylists li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); }
+.mylists li.current { border-color: var(--accent); }
+.mylists .nm { flex: 1; min-width: 0; font-size: 14px; }
+.mylists .nm small { display: block; color: var(--muted); font-size: 12px; }
+.mylists .nm b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+.sharebox { display: grid; gap: 8px; padding: 12px; border-radius: 8px; background: var(--chip); }
+.sharerow { display: flex; gap: 6px; }
+.sharerow input { flex: 1; }
+.viewing .app { grid-template-columns: minmax(0, 1fr); }
+.viewing .side, .viewing #acctBtn { display: none; }
+.viewbar { max-width: 760px; margin: 0 auto 20px; padding: 12px 14px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; font-size: 14px; }
+.viewbar div { flex: 1; min-width: 220px; }
+.viewbar small { display: block; color: var(--muted); font-size: 12px; }
+input[type="color"] { width: 100%; height: 36px; padding: 2px; border: 1px solid var(--line); border-radius: 6px; background: var(--field); }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.check input { width: 16px; height: 16px; accent-color: var(--accent); margin: 0; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.btn { font: 500 13px var(--ui); padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--field); color: var(--fg); cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.btn.small { padding: 4px 8px; font-size: 12px; }
+.btn.danger { color: var(--warn); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.4em; }
+.status.err { color: var(--warn); }
+.status.ok { color: var(--ok); }
+hr.sep { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--chip); border-radius: 6px; padding: 3px 4px 3px 9px; font-size: 13px; }
+.chip button { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 4px; }
+.sb-results { display: grid; max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--field); }
+.sb-results:empty { display: none; }
+.sb-item { text-align: left; border: 0; border-bottom: 1px solid var(--line); background: none; color: var(--fg); padding: 7px 10px; cursor: pointer; font: 13px var(--ui); }
+.sb-item:hover { background: var(--chip); }
+.sb-item small { display: block; color: var(--muted); font-size: 12px; }
+.fmtbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.fmtbar button, .fmtbar label { min-width: 30px; height: 28px; padding: 0 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--field); color: var(--fg); font: 13px var(--ui); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.fmtbar button:hover, .fmtbar label:hover { border-color: var(--accent); color: var(--accent); }
+.fmtbar input[type="color"] { width: 18px; height: 18px; padding: 0; border: 0; background: none; cursor: pointer; }
+.fmtbar .gap { width: 6px; }
+.tokens { display: flex; flex-wrap: wrap; gap: 4px; }
+.tok { font: 12px var(--mono); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line); background: var(--field); color: var(--fg); cursor: pointer; }
+.tok:hover { border-color: var(--accent); color: var(--accent); }
+.blockcard { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); }
+.blockcard .bar { display: flex; gap: 6px; align-items: center; }
+.blockcard .bar .lbl { margin-right: auto; }
+code.k { font: 12px var(--mono); background: var(--chip); padding: 1px 4px; border-radius: 3px; }
+
+.desk { overflow: auto; min-width: 0; padding: 24px; background-color: var(--mat);
+  background-image: linear-gradient(var(--mat-grid) 1px, transparent 1px), linear-gradient(90deg, var(--mat-grid) 1px, transparent 1px);
+  background-size: 24px 24px; }
+.notice { max-width: 760px; margin: 0 auto 20px; padding: 10px 14px; border-radius: 8px; background: var(--panel); color: var(--fg); font-size: 13px; border: 1px solid var(--line); }
+.notice b { color: var(--warn); }
+.sheets { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+.sheet-wrap { display: grid; gap: 6px; max-width: 100%; }
+.sheet-label { font: 12px var(--mono); color: var(--mat-ink); display: flex; gap: 12px; flex-wrap: wrap; }
+.sheet-label .warn { color: #ffb37a; }
+.sheet-box { position: relative; overflow: hidden; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.2), 0 12px 32px rgba(0,0,0,.35); max-width: 100%; }
+
+/* ---------- the printed sheet ---------- */
+.sheet { position: absolute; top: 0; left: 0; transform-origin: 0 0; background: #fff; color: #141414;
+  -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  font-family: var(--doc-font); font-size: var(--doc-size); line-height: var(--doc-lh); }
+.sheet .cols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 100%); column-gap: var(--doc-gap); height: 100%; }
+.sheet .col { position: relative; min-width: 0; min-height: 0; display: flow-root; }
+.sheet.rule .col + .col::before { content: ""; position: absolute; top: 0; bottom: 0; left: calc(var(--doc-gap) / -2); border-left: 0.5pt solid #9a9a9a; }
+.sheet .col.over { outline: 2px dashed #e0631b; outline-offset: -1px; }
+.sheet b, .sheet strong { font-weight: 700; }
+.sheet .fx-big { font-size: 1.3em; }
+.sheet .fill { display: inline-block; width: 6em; border-bottom: 1px solid currentColor; }
+.sheet .fline { display: flex; align-items: baseline; padding-top: .45em; } /* room to write */
+.sheet .fline::before { content: '\200b'; } /* keeps a line with only a write-in line as tall as text */
+.sheet .fline .fill { flex: 1 1 0; width: auto; min-width: 1.5em; margin-left: .3em; position: relative; top: 2.75pt; } /* line sits 2pt below the baseline */
+.sheet .fline .fill:first-child { margin-left: 0; }
+.sheet .fx-small { font-size: 0.85em; }
+.it { overflow-wrap: anywhere; }
+.h0 { padding-top: 0.9em; font-family: var(--doc-head); font-size: calc(var(--doc-size) * 1.7); font-weight: 600; line-height: 1.1; color: var(--doc-accent); text-transform: uppercase; letter-spacing: 0.02em; }
+.h1 { padding-top: 0.7em; padding-bottom: 0.2em; }
+.h1 > span { display: block; font-family: var(--doc-head); font-weight: 600; font-size: calc(var(--doc-size) * 1.35); line-height: 1.15; }
+.hs-bar .h1 > span { background: var(--doc-accent); color: #fff; padding: 0.12em 0.4em; }
+.hs-rule .h1 > span { color: var(--doc-accent); border-bottom: 1pt solid var(--doc-accent); padding-bottom: 0.1em; }
+.hs-caps .h1 > span { text-transform: uppercase; letter-spacing: 0.08em; font-size: calc(var(--doc-size) * 1.15); color: var(--doc-accent); }
+.h1 .cont { font-weight: 400; font-size: 0.75em; opacity: 0.8; }
+.h2 { padding-top: 0.5em; padding-bottom: 0.1em; font-family: var(--doc-head); font-weight: 600; color: var(--doc-accent); font-size: calc(var(--doc-size) * 1.08); border-bottom: 0.5pt solid #b5b5b5; }
+.col > .it:first-child { padding-top: 0; }
+.mtg { padding-block: calc(var(--doc-space) / 2); break-inside: avoid; }
+.sep-dotted .mtg + .mtg { border-top: 0.5pt dotted #8a8a8a; }
+.sep-line .mtg + .mtg { border-top: 0.5pt solid #c4c4c4; }
+.mtg.tl { display: grid; grid-template-columns: var(--doc-timew) minmax(0, 1fr); column-gap: 0.4em; }
+.mtg-time { font-weight: 700; font-variant-numeric: tabular-nums; }
+.mtg-time > div:first-child { white-space: nowrap; }
+.mtg-time > div + div { font-weight: 400; font-size: 0.88em; line-height: 1.15; }
+.mtg-body > div + div { margin-top: 0.05em; }
+.bt { padding-top: 0.8em; font-family: var(--doc-head); font-weight: 600; font-size: calc(var(--doc-size) * 1.2); color: var(--doc-accent); line-height: 1.15; }
+.bp { padding-top: 0.35em; }
+.bp ul { margin: 0; padding-left: 1.1em; }
+.bp h4 { margin: 0; font-family: var(--doc-head); font-size: 1.05em; }
+.boxed { margin-top: 0.8em; padding: 0.5em 0.6em; border: 1pt solid var(--doc-accent); }
+.col > .boxed:first-child { margin-top: 0; }
+.boxed .btitle { font-family: var(--doc-head); font-weight: 600; font-size: 1.15em; color: var(--doc-accent); }
+.boxed .bp:first-child { padding-top: 0; }
+.lg { display: grid; grid-template-columns: 2.8em minmax(0, 1fr); gap: 0.4em; padding-top: 0.15em; }
+.lg b { font-variant-numeric: tabular-nums; }
+.lgrow-in { display: grid; column-gap: 0.9em; }
+.lg-desc { font-size: 0.9em; opacity: 0.85; }
+.front { height: 100%; display: flex; flex-direction: column; gap: 0.8em; text-align: center; overflow: hidden; }
+.front.v-center { justify-content: center; }
+.front.v-spread { justify-content: space-between; }
+.front.bordered { border: 1.5pt solid var(--doc-accent); padding: 1.2em 1em; }
+.front .logo { display: block; align-self: center; max-width: 70%; max-height: 32%; object-fit: contain; }
+.front .ft { font-family: var(--doc-head); font-weight: 600; font-size: calc(var(--doc-size) * var(--doc-titlex)); line-height: 1.05; color: var(--doc-accent); text-wrap: balance; }
+.front .fs { font-size: calc(var(--doc-size) * 1.3); text-wrap: balance; }
+.front .fb { display: grid; gap: 0.5em; }
+.front .fb p { margin: 0; }
+.front .fextra { text-align: left; }
+.empty-note { padding: 1em; border: 1pt dashed #999; color: #555; text-align: center; }
+
+@media (max-width: 860px) {
+  html, body { height: auto; }
+  .app { display: block; height: auto; }
+  .side { border-right: 0; border-bottom: 1px solid var(--line); overflow: visible; }
+  .tabs { position: static; }
+  .desk { padding: 20px 16px; }
+}
+@media (max-width: 420px) {
+  .row3 { grid-template-columns: 1fr 1fr; }
+}
+
+@media print {
+  html, body { height: auto; background: #fff; }
+  .topbar, .side, .sheet-label, .notice, .viewbar { display: none !important; }
+  .app { display: block; height: auto; }
+  .desk { padding: 0; background: none; overflow: visible; }
+  .sheets { display: block; }
+  .sheet-wrap { display: block; }
+  .sheet-box { width: auto !important; height: auto !important; box-shadow: none; overflow: visible; }
+  .sheet { position: relative; transform: none !important; break-after: page; }
+  .sheet-wrap:last-child .sheet { break-after: auto; }
+  .sheet .col.over { outline: none; }
+}
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><h1><a href="../" title="About MeetingSchedule.app">MeetingSchedule.app</a></h1><small>BMLT meeting lists, ready to print</small><a class="guide-link" href="../#guide">Guide</a></div>
+    <div class="pill" id="dataPill"><span>Sample data</span></div>
+    <div class="tools">
+      <span class="meta" id="pageCount"></span>
+      <label class="meta" for="zoom">Zoom</label>
+      <select id="zoom" style="width:auto">
+        <option value="fit">Fit</option><option value="0.5">50%</option><option value="0.75">75%</option><option value="1">100%</option><option value="1.5">150%</option>
+      </select>
+      <button class="btn" id="docxBtn" type="button" title="Download an editable Word file">Word</button>
+      <button class="btn" id="xlsxBtn" type="button" title="Download the meeting list as a spreadsheet">Excel</button>
+      <button class="btn primary" id="printBtn" type="button">Print or save PDF</button>
+      <button class="btn" id="acctBtn" type="button" hidden>Sign in</button>
+    </div>
+  </header>
+
+  <aside class="side">
+    <nav class="tabs" role="tablist" aria-label="Settings">
+      <button class="tab" role="tab" data-tab="source" aria-selected="true" type="button">Meetings</button>
+      <button class="tab" role="tab" data-tab="page" aria-selected="false" type="button">Page</button>
+      <button class="tab" role="tab" data-tab="front" aria-selected="false" type="button">Front</button>
+      <button class="tab" role="tab" data-tab="content" aria-selected="false" type="button">Content</button>
+      <button class="tab" role="tab" data-tab="layout" aria-selected="false" type="button">Details</button>
+      <button class="tab" role="tab" data-tab="style" aria-selected="false" type="button">Style</button>
+      <button class="tab" role="tab" data-tab="file" aria-selected="false" type="button">Save</button>
+      <button class="tab" role="tab" data-tab="account" aria-selected="false" type="button">My lists</button>
+    </nav>
+
+    <!-- SOURCE -->
+    <section class="panel" data-panel="source">
+      <h2>Where meetings come from</h2>
+      <div class="field">
+        <label class="lbl" for="srvSearch">BMLT server</label>
+        <input type="search" id="srvSearch" placeholder="Find a server by name or address" autocomplete="off">
+        <div class="sb-results" id="srvResults"></div>
+        <input type="url" id="server" data-path="source.server" aria-label="Server address" placeholder="https://aggregator.bmltenabled.org/main_server/">
+        <div class="status" id="srvStatus"></div>
+      </div>
+      <p class="help">The aggregator searches every public BMLT server at once. Pick a single root server to work from its own data, or paste any server address.</p>
+      <div class="field">
+        <label class="lbl" for="sbSearch">Service bodies</label>
+        <input type="search" id="sbSearch" placeholder="Search regions and areas by name">
+        <div class="sb-results" id="sbResults"></div>
+        <div class="chips" id="sbChips"></div>
+        <div class="status" id="sbStatus"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="recursive" data-path="source.recursive"> Include everything under these service bodies</label>
+      <div class="field">
+        <label class="lbl" for="lang">Language for days and formats</label>
+        <select id="lang" data-path="source.lang"></select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="lang2">Also show days in</label>
+        <select id="lang2" data-path="source.lang2"></select>
+      </div>
+      <p class="help">Day names and the printed headings use the first language, and format names come from the server's own translations. Changing it reloads the meetings. Pick a second language to print each day in both, such as “Monday / Lunes”.</p>
+      <div class="btns">
+        <button class="btn primary" type="button" id="loadBtn">Load meetings</button>
+        <button class="btn" type="button" id="sampleBtn">Use sample data</button>
+      </div>
+      <div class="status" id="loadStatus"></div>
+      <hr class="sep">
+      <h2>Which meetings to print</h2>
+      <div class="field">
+        <span class="lbl">Days</span>
+        <div class="checks" id="dayChecks"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">Meeting type</span>
+        <div class="checks">
+          <label class="check"><input type="checkbox" id="vIn" data-path="source.inperson"> In person</label>
+          <label class="check"><input type="checkbox" id="vHy" data-path="source.hybrid"> Hybrid</label>
+          <label class="check"><input type="checkbox" id="vVi" data-path="source.virtual"> Virtual</label>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="hideFormats">Leave out meetings with these format codes</label>
+        <input type="text" id="hideFormats" data-path="source.hideFormats" placeholder="e.g. TC, M">
+      </div>
+      <div class="field">
+        <label class="lbl" for="onlyCities">Only these cities (blank for all)</label>
+        <input type="text" id="onlyCities" data-path="source.onlyCities" placeholder="e.g. Austin, Round Rock">
+      </div>
+    </section>
+
+    <!-- PAGE -->
+    <section class="panel" data-panel="page" hidden>
+      <h2>Paper and columns</h2>
+      <div class="field">
+        <label class="lbl" for="preset">Layout</label>
+        <select id="preset">
+          <option value="">Custom layout</option>
+          <option value="trifold">Trifold brochure · Letter landscape</option>
+          <option value="trifoldA4">Trifold brochure · A4 landscape</option>
+          <option value="quadLegal">Quad fold · Legal landscape, 4 panels</option>
+          <option value="quadLedger">Quad fold · Ledger (11×17) landscape, 4 panels</option>
+          <option value="booklet">Half-letter booklet pages</option>
+          <option value="wall">Wall list · Tabloid, 4 columns</option>
+          <option value="plain">Plain list · Letter portrait, 2 columns</option>
+        </select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label class="lbl" for="size">Paper size</label>
+          <select id="size" data-path="page.size"></select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="orientation">Orientation</label>
+          <select id="orientation" data-path="page.orientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
+        </div>
+      </div>
+      <div class="row" id="customSize">
+        <div class="field"><label class="lbl" for="cw">Width (<span class="u"></span>)</label><input type="number" step="0.1" min="1" id="cw" data-path="page.cw"></div>
+        <div class="field"><label class="lbl" for="ch">Height (<span class="u"></span>)</label><input type="number" step="0.1" min="1" id="ch" data-path="page.ch"></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label class="lbl" for="columns">Columns</label><input type="number" min="1" max="8" step="1" id="columns" data-path="page.columns"></div>
+        <div class="field"><label class="lbl" for="margin">Margin (<span class="u"></span>)</label><input type="number" min="0" step="0.05" id="margin" data-path="page.margin"></div>
+        <div class="field"><label class="lbl" for="gap">Gutter (<span class="u"></span>)</label><input type="number" min="0" step="0.05" id="gap" data-path="page.gap"></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label class="lbl" for="units">Units</label>
+          <select id="units" data-path="page.units"><option value="in">Inches</option><option value="mm">Millimetres</option></select>
+        </div>
+        <label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="rule" data-path="page.rule"> Line between columns</label>
+      </div>
+      <p class="help">For a trifold or quad fold, print double-sided and flip on the short edge. The front panel goes in the last column of page 1, which becomes the cover once folded.</p>
+    </section>
+
+    <!-- FRONT -->
+    <section class="panel" data-panel="front" hidden>
+      <h2>Front page or panel</h2>
+      <div class="field">
+        <label class="lbl" for="fplace">Where it goes</label>
+        <select id="fplace" data-path="front.placement">
+          <option value="none">No front panel</option>
+          <option value="first">First column (page 1)</option>
+          <option value="last">Last column (page 1), the cover of a trifold or quad fold</option>
+          <option value="back">Last column of the last page (back cover)</option>
+          <option value="page">Whole first page</option>
+        </select>
+      </div>
+      <div class="field"><span class="lbl">Quick pick</span><div class="btns">
+        <button type="button" class="btn" data-fplace="first">First column</button>
+        <button type="button" class="btn" data-fplace="last">Last column</button>
+      </div></div>
+      <div class="field"><label class="lbl" for="ftitle">Title</label><div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="ftitle"><button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span><button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button><label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span><button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button></div><input type="text" id="ftitle" data-path="front.title"></div>
+      <div class="field"><label class="lbl" for="fsub">Subtitle</label><div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="fsub"><button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span><button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button><label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span><button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button></div><input type="text" id="fsub" data-path="front.subtitle"></div>
+      <div class="field">
+        <span class="lbl">Logo</span>
+        <div class="btns">
+          <label class="btn" for="logoFile" style="cursor:pointer">Choose image…</label>
+          <input type="file" id="logoFile" accept="image/*" hidden>
+          <button class="btn danger" type="button" id="logoClear">Remove logo</button>
+        </div>
+        <div class="status" id="logoStatus"></div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="fbody">Text</label>
+        <div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="fbody"><button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span><button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button><label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span><button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button><span class="gap"></span><button type="button" data-fx="line" title="Add a write-in line that runs to the edge of the column">+ Line</button></div>
+        <textarea id="fbody" data-path="front.body" rows="7"></textarea>
+      </div>
+      <p class="help">Select text and use the toolbar to style it, or type <code class="k">**bold**</code>, <code class="k">*italic*</code>, <code class="k">__underline__</code>. Start lines with <code class="k">- </code> for a list, and leave a blank line between paragraphs. Shortcodes such as <code class="k">{date}</code> and <code class="k">{count}</code> work here and in the title and subtitle; see the Content tab for the full list.</p>
+      <div class="row">
+        <div class="field">
+          <label class="lbl" for="fvalign">Vertical position</label>
+          <select id="fvalign" data-path="front.valign"><option value="top">Top</option><option value="center">Centered</option><option value="spread">Spread out</option></select>
+        </div>
+        <div class="field"><label class="lbl" for="ftsize">Title size</label><input type="number" id="ftsize" min="1" max="6" step="0.1" data-path="front.titleScale"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="fborder" data-path="front.border"> Border around the panel</label>
+    </section>
+
+    <!-- CONTENT -->
+    <section class="panel" data-panel="content" hidden>
+      <h2>Your own content</h2>
+      <p class="help">Add welcome text, service committee info, a phone list or anything else your printed list carries. Type three or more underscores, like <code class="k">Name ___</code>, for a solid write-in line that runs to the edge of the column. <b>+ Line</b> in the toolbar adds another one; in a list like Name ___ / Phone ___ it adds a whole new entry.</p>
+      <div id="blocks" style="display:grid;gap:12px"></div>
+      <div class="btns"><button class="btn" type="button" id="addBlock">Add a blank block</button></div>
+      <div class="field"><span class="lbl">Starter blocks</span><div class="btns" id="starterBlocks"></div><p class="help">These are the four blocks every new schedule starts with. Add one back any time, even after removing it.</p></div>
+      <hr class="sep">
+      <h2>Shortcodes</h2>
+      <p class="help">Type a shortcode in curly brackets anywhere: the title, subtitle, front text, block headings and text, and the meeting and time templates. Built in: <code class="k">{date}</code> this month and year, <code class="k">{month}</code>, <code class="k">{year}</code>, <code class="k">{today}</code> the full date, <code class="k">{count}</code> all meetings, <code class="k">{in_person}</code>, <code class="k">{virtual}</code>, <code class="k">{hybrid}</code>, <code class="k">{area}</code> or <code class="k">{service_body}</code> the service bodies you picked, and <code class="k">{cities}</code> and <code class="k">{counties}</code> every city and county the listed meetings are in, A to Z. <code class="k">{helpline}</code> and <code class="k">{url}</code> are the helpline and website your BMLT server lists for the service body you picked (the first one that has them). A line of your own with the same name replaces them.</p>
+      <div class="field">
+        <label class="lbl" for="shortcodes">Your own shortcodes</label>
+        <textarea id="shortcodes" data-path="shortcodes" rows="4" placeholder="literature = Literature orders: lit@example.org"></textarea>
+      </div>
+      <p class="help">One per line, as <code class="k">name = text</code>. Then <code class="k">{name}</code> prints that text wherever you use it, so a phone number or web address only has to be changed in one place.</p>
+      <hr class="sep">
+      <h2>Format key</h2>
+      <div class="field">
+        <label class="lbl" for="legend">Show a key to the format codes</label>
+        <select id="legend" data-path="meetings.legend">
+          <option value="none">Don't show</option>
+          <option value="front">On the front panel</option>
+          <option value="after">After the meetings</option>
+          <option value="back">In its own column at the end</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="legendCols">Columns in the key</label>
+        <select id="legendCols" data-path="meetings.legendCols">
+          <option value="1">One column</option>
+          <option value="2">Two columns (saves space)</option>
+          <option value="3">Three columns</option>
+        </select>
+      </div>
+      <label class="check"><input type="checkbox" id="legendDesc" data-path="meetings.legendDesc"> Include each format's description</label>
+    </section>
+
+    <!-- LAYOUT -->
+    <section class="panel" data-panel="layout" hidden>
+      <h2>How meetings are grouped</h2>
+      <div class="row">
+        <div class="field">
+          <label class="lbl" for="group">Group by</label>
+          <select id="group" data-path="meetings.group">
+            <option value="day">Day</option>
+            <option value="day-city">Day, then city</option>
+            <option value="city">City</option>
+            <option value="city-day">City, then day</option>
+            <option value="body-day">Service body, then day</option>
+            <option value="body-city">Service body, then city</option>
+            <option value="body">Service body</option>
+            <option value="none">No headings</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="weekStart">Week starts</label>
+          <select id="weekStart" data-path="meetings.weekStart"><option value="1">Sunday</option><option value="2">Monday</option></select>
+        </div>
+      </div>
+      <label class="check"><input type="checkbox" id="sepVirtual" data-path="meetings.separateVirtual"> Put virtual-only meetings in their own section</label>
+      <label class="check"><input type="checkbox" id="cont" data-path="meetings.cont"> Repeat the heading when a group runs into a new column</label>
+      <hr class="sep">
+      <h2>Meeting details</h2>
+      <div class="row">
+        <div class="field">
+          <label class="lbl" for="mlayout">Layout</label>
+          <select id="mlayout" data-path="meetings.layout"><option value="time-left">Time in a left column</option><option value="stacked">Everything stacked</option></select>
+        </div>
+        <div class="field">
+          <label class="lbl" for="timeFmt">Time format</label>
+          <select id="timeFmt" data-path="meetings.timeFmt"><option value="12">7:30 PM</option><option value="12short">7:30p</option><option value="24">19:30</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="timeTpl">Time column shows</label>
+        <select id="timePreset">
+          <option value="">Load a starting setup…</option>
+          <option value="{time}">Start time</option>
+          <option value="{time}\n{end_time}">Start time, end time below</option>
+          <option value="{time}\n{formats}">Start time, formats below</option>
+          <option value="{time}\n{end_time}\n{venue}">Start, end and meeting type</option>
+        </select>
+        <div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="timeTpl"><button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span><button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button><label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span><button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button></div>
+        <textarea id="timeTpl" data-path="meetings.timeTpl" rows="3" class="tpl"></textarea>
+        <p class="help">Put each item on its own line to stack them. The first line is bold; lines below it are smaller. Use the field buttons below to add {end_time}, {formats}, {venue} and so on.</p>
+      </div>
+      <div class="field"><label class="lbl" for="timeW">Time column width (em)</label><input type="number" id="timeW" min="1" max="10" step="0.1" data-path="meetings.timeW"></div>
+      <label class="check"><input type="checkbox" id="noon" data-path="meetings.noon"> Print 12:00 PM as Noon and 12:00 AM as Midnight</label>
+      <div class="field">
+        <label class="lbl" for="tplPreset">Detail template</label>
+        <select id="tplPreset">
+          <option value="">Load a starting template…</option>
+          <option value="classic">Classic: name, place, address, formats</option>
+          <option value="compact">Compact: one line per meeting</option>
+          <option value="detailed">Detailed: adds notes and format names</option>
+          <option value="citylist">City first, for lists grouped by day</option>
+        </select>
+        <div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="template"><button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button><button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span><button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button><label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span><button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button></div>
+        <textarea id="template" data-path="meetings.template" rows="7" class="tpl"></textarea>
+      </div>
+      <p class="help">Each line prints as a line. Text in <code class="k">[square brackets]</code> is left out when a field inside it is empty, so <code class="k">[Room: {info}]</code> only prints when there is room info. Click a field to insert it. The toolbar styles the selected text.</p>
+      <div class="tokens" id="tokens"></div>
+    </section>
+
+    <!-- STYLE -->
+    <section class="panel" data-panel="style" hidden>
+      <h2>Type and colour</h2>
+      <div class="row">
+        <div class="field"><label class="lbl" for="font">Body font</label><select id="font" data-path="style.font"></select></div>
+        <div class="field"><label class="lbl" for="head">Heading font</label><select id="head" data-path="style.head"></select></div>
+      </div>
+      <div class="row3">
+        <div class="field"><label class="lbl" for="fsize">Size (pt)</label><input type="number" id="fsize" min="5" max="24" step="0.5" data-path="style.size"></div>
+        <div class="field"><label class="lbl" for="lh">Line height</label><input type="number" id="lh" min="0.9" max="2" step="0.05" data-path="style.lh"></div>
+        <div class="field"><label class="lbl" for="space">Space (pt)</label><input type="number" id="space" min="0" max="24" step="0.5" data-path="style.space"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="lbl" for="hstyle">Day headings</label>
+          <select id="hstyle" data-path="style.hstyle"><option value="bar">Solid bar</option><option value="rule">Underlined</option><option value="caps">Spaced capitals</option></select>
+        </div>
+        <div class="field"><label class="lbl" for="sep">Between meetings</label>
+          <select id="sep" data-path="style.sep"><option value="none">Space only</option><option value="dotted">Dotted line</option><option value="line">Thin line</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="lbl" for="accent">Accent colour</label><input type="color" id="accent" data-path="style.accent"></div>
+        <div class="field" style="align-self:end"><button class="btn" type="button" id="blackInk">Black ink only</button></div>
+      </div>
+    </section>
+
+    <!-- FILE -->
+    <section class="panel" data-panel="file" hidden>
+      <h2>Save your layout</h2>
+      <p class="help">Your settings are kept in this browser automatically. Export them to move a layout to another computer or share it with your committee.</p>
+      <div class="btns">
+        <button class="btn" type="button" id="exportBtn">Download settings file</button>
+        <button class="btn" type="button" id="copyBtn">Copy settings</button>
+        <label class="btn" for="importFile" style="cursor:pointer">Open settings file…</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div class="field">
+        <label class="lbl" for="settingsText">Settings (paste here to load)</label>
+        <textarea id="settingsText" rows="6" spellcheck="false"></textarea>
+        <div class="btns"><button class="btn" type="button" id="applyText">Load pasted settings</button></div>
+      </div>
+      <div class="status" id="fileStatus"></div>
+      <hr class="sep">
+      <div class="btns"><button class="btn danger" type="button" id="resetBtn">Reset everything</button></div>
+    </section>
+
+    <!-- ACCOUNT -->
+    <section class="panel" data-panel="account" hidden>
+      <h2>My lists</h2>
+      <p class="help" id="acctIntro">Sign in to save your lists online, open them on any computer, and share a link anyone can view and print.</p>
+      <p class="help" id="acctUnavailable" hidden>Accounts work on <a href="https://meetingschedule.app/app/">meetingschedule.app</a>. Here, use the Save tab to keep your settings in a file.</p>
+      <div id="acctOut" hidden>
+        <div class="seg" role="group" aria-label="Account">
+          <button type="button" data-mode="login" aria-pressed="true">Sign in</button>
+          <button type="button" data-mode="signup" aria-pressed="false">Create account</button>
+        </div>
+        <form id="authForm" class="stack" novalidate>
+          <div class="field" id="nameField" hidden><label class="lbl" for="authName">Your name</label><input type="text" id="authName" autocomplete="name" maxlength="120"></div>
+          <div class="field"><label class="lbl" for="authEmail">Email</label><input type="email" id="authEmail" autocomplete="email" required></div>
+          <div class="field"><label class="lbl" for="authPass">Password</label><input type="password" id="authPass" autocomplete="current-password" required minlength="8"></div>
+          <div class="btns"><button class="btn primary" type="submit" id="authSubmit">Sign in</button></div>
+          <button type="button" class="linkbtn" id="forgotLink">Forgot your password?</button>
+        </form>
+        <form id="forgotForm" class="stack" novalidate hidden>
+          <p class="help" style="margin:0">Enter your email and we'll send a link to choose a new password.</p>
+          <div class="field"><label class="lbl" for="forgotEmail">Email</label><input type="email" id="forgotEmail" autocomplete="email" required></div>
+          <div class="btns"><button class="btn primary" type="submit">Send reset link</button><button class="btn" type="button" id="forgotBack">Back</button></div>
+        </form>
+        <form id="resetForm" class="stack" novalidate hidden>
+          <p class="help" style="margin:0">Choose a new password for your account.</p>
+          <div class="field"><label class="lbl" for="resetPass">New password</label><input type="password" id="resetPass" autocomplete="new-password" required minlength="8"></div>
+          <div class="btns"><button class="btn primary" type="submit">Save new password</button></div>
+        </form>
+      </div>
+      <div id="acctIn" class="stack" hidden>
+        <div class="btns" style="align-items:center"><span style="flex:1;font-size:14px">Signed in as <b id="acctWho"></b></span><button class="btn small" type="button" id="logoutBtn">Sign out</button></div>
+        <hr class="sep">
+        <h2>This list</h2>
+        <div class="field"><label class="lbl" for="listName">Name</label><input type="text" id="listName" maxlength="160" placeholder="e.g. Riverside Area meeting list"></div>
+        <div class="btns"><button class="btn primary" type="button" id="saveListBtn">Save</button><button class="btn" type="button" id="saveNewBtn">Save as a new list</button></div>
+        <div class="sharebox" id="shareBox" hidden>
+          <label class="check"><input type="checkbox" id="shareOn"> Share link: anyone with the link can view and print this list</label>
+          <div class="sharerow" id="shareRow" hidden><input type="text" id="shareUrl" readonly aria-label="Share link"><button class="btn" type="button" id="shareCopy">Copy</button></div>
+          <p class="help" style="margin:0">People who open the link see the list with the latest meetings from your BMLT server. They can print it or make their own copy, but they can't change yours.</p>
+        </div>
+        <hr class="sep">
+        <h2>Saved lists</h2>
+        <ul class="mylists" id="myLists"></ul>
+        <details>
+          <summary class="linkbtn">Change password</summary>
+          <form id="pwForm" class="stack" style="padding-top:12px" novalidate>
+            <div class="field"><label class="lbl" for="pwCur">Current password</label><input type="password" id="pwCur" autocomplete="current-password"></div>
+            <div class="field"><label class="lbl" for="pwNew">New password</label><input type="password" id="pwNew" autocomplete="new-password" minlength="8"></div>
+            <div class="btns"><button class="btn" type="submit">Change password</button></div>
+          </form>
+        </details>
+      </div>
+      <div class="status" id="acctStatus" role="status"></div>
+    </section>
+  </aside>
+
+  <main class="desk" id="desk">
+    <div class="notice" id="framedNotice" hidden><b>Preview copy.</b> This embedded page can't reach BMLT servers or open the print dialog, so it shows sample meetings. Open meetingschedule.app in Chrome, Edge, Firefox or Safari to load live meetings and print.</div>
+    <div class="viewbar" id="viewBar" hidden><div><b id="viewName">Shared list</b><small id="viewNote">Loading…</small></div><button class="btn" type="button" id="copyShared">Make my own copy</button></div>
+    <div class="sheets" id="sheets"></div>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- constants ---------- */
+const DAYS = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+// Printed words other than day names, for the languages BMLT servers commonly carry. Anything missing prints in English.
+const WORDS = {
+  es: { virtual: 'Reuniones virtuales', formats: 'Formatos de reunión', continued: 'continuación', cont: 'cont.', noon: 'Mediodía', midnight: 'Medianoche', other: 'Otros lugares', nobody: 'Otras reuniones' },
+  fr: { virtual: 'Réunions virtuelles', formats: 'Formats des réunions', continued: 'suite', cont: 'suite', noon: 'Midi', midnight: 'Minuit', other: 'Autres lieux', nobody: 'Autres réunions' },
+  de: { virtual: 'Online-Meetings', formats: 'Meeting-Formate', continued: 'Fortsetzung', cont: 'Forts.', noon: 'Mittag', midnight: 'Mitternacht', other: 'Andere Orte', nobody: 'Andere Meetings' },
+  it: { virtual: 'Riunioni virtuali', formats: 'Formati delle riunioni', continued: 'continua', cont: 'cont.', noon: 'Mezzogiorno', midnight: 'Mezzanotte', other: 'Altri luoghi', nobody: 'Altre riunioni' },
+  pt: { virtual: 'Reuniões virtuais', formats: 'Formatos das reuniões', continued: 'continuação', cont: 'cont.', noon: 'Meio-dia', midnight: 'Meia-noite', other: 'Outros locais', nobody: 'Outras reuniões' },
+  pl: { virtual: 'Mityngi online', formats: 'Formaty mityngów', continued: 'ciąg dalszy', cont: 'cd.', noon: 'Południe', midnight: 'Północ', other: 'Inne miejsca', nobody: 'Inne mityngi' },
+  sv: { virtual: 'Onlinemöten', formats: 'Mötesformat', continued: 'fortsättning', cont: 'forts.', other: 'Andra platser', nobody: 'Andra möten' },
+  da: { virtual: 'Onlinemøder', formats: 'Mødeformater', continued: 'fortsat', cont: 'forts.', other: 'Andre steder', nobody: 'Andre møder' }
+};
+const EN_WORDS = { virtual: 'Virtual meetings', formats: 'Meeting formats', continued: 'continued', cont: 'cont.', noon: 'Noon', midnight: 'Midnight', other: 'Other locations', nobody: 'Other meetings' };
+const printLang = () => String(cfg.source.lang || '').toLowerCase();
+// A printed word in the chosen language. Noon and midnight return '' when there is no translation, so the time prints as a number.
+const word = k => { const l = printLang(); if (!l || l === 'en') return EN_WORDS[k]; const w = WORDS[l.split('-')[0]]; return w?.[k] ?? (k === 'noon' || k === 'midnight' ? '' : EN_WORDS[k]); };
+const dayCache = {};
+function dayName(n) { // in the print language, followed by the second language when one is set: "Monday / Lunes"
+  const first = printLang() || 'en', second = String(cfg.source.lang2 || '').toLowerCase();
+  const a = daysIn(first)[n] || '';
+  return second && second !== first ? a + ' / ' + (daysIn(second)[n] || '') : a;
+}
+function daysIn(l) {
+  if (l === 'en') return DAYS;
+  return dayCache[l] ??= (() => { try { const f = new Intl.DateTimeFormat(l, { weekday: 'long', timeZone: 'UTC' }); return ['', ...[0, 1, 2, 3, 4, 5, 6].map(i => { const d = f.format(new Date(Date.UTC(2023, 0, 1 + i))); return d.charAt(0).toLocaleUpperCase(l) + d.slice(1); })]; } catch { return DAYS; } })();
+}
+const SIZES = {
+  letter: { n: 'Letter', w: 8.5, h: 11 }, legal: { n: 'Legal', w: 8.5, h: 14 }, tabloid: { n: 'Tabloid / Ledger', w: 11, h: 17 },
+  half: { n: 'Half Letter', w: 5.5, h: 8.5 }, a3: { n: 'A3', w: 297 / 25.4, h: 420 / 25.4, mm: 1 }, a4: { n: 'A4', w: 210 / 25.4, h: 297 / 25.4, mm: 1 },
+  a5: { n: 'A5', w: 148 / 25.4, h: 210 / 25.4, mm: 1 }, custom: { n: 'Custom size' }
+};
+const FONTS = {
+  'Roboto Condensed': '"Roboto Condensed", "Arial Narrow", sans-serif',
+  'Source Sans 3': '"Source Sans 3", "Segoe UI", Arial, sans-serif',
+  'Libre Franklin': '"Libre Franklin", "Franklin Gothic", Arial, sans-serif',
+  'Atkinson Hyperlegible': '"Atkinson Hyperlegible", Verdana, sans-serif',
+  'Source Serif 4': '"Source Serif 4", Georgia, serif',
+  'Merriweather': 'Merriweather, Georgia, serif',
+  'Oswald': 'Oswald, "Arial Narrow", sans-serif',
+  'Arial': 'Arial, Helvetica, sans-serif',
+  'Georgia': 'Georgia, "Times New Roman", serif'
+};
+const VENUE = { 1: 'In person', 2: 'Virtual', 3: 'Hybrid' };
+const TEMPLATES = {
+  classic: '**{name}**[ ({formats})]\n[{location}]\n[{street}, ]{city}\n[*{info}*]\n[Online: {link}]\n[Phone: {phone}]',
+  compact: '**{name}**[, {location}][, {street}][, {city}][ ({formats})]',
+  detailed: '**{name}**[ · {venue}]\n[{location}]\n[{address}]\n[*{info}*]\n[Formats: {format_names}]\n[Online: {link}]\n[Phone: {phone}][ · {virtual_info}]\n[*{comments}*]',
+  citylist: '**{city}** · {name}\n[{location}, ]{street}\n[{formats}][ · *{info}*]'
+};
+const TOKENS = ['name', 'time', 'end_time', 'time_range', 'duration', 'day', 'location', 'info', 'street', 'city', 'neighborhood', 'county', 'state', 'zip', 'address', 'formats', 'format_names', 'venue', 'link', 'phone', 'virtual_info', 'comments', 'service_body', 'bus', 'train', 'contact_name', 'contact_phone', 'contact_email'];
+const PRESETS = {
+  trifold: { page: { size: 'letter', orientation: 'landscape', columns: 3, units: 'in', margin: 0.35, gap: 0.5, rule: false }, front: { placement: 'last' } },
+  trifoldA4: { page: { size: 'a4', orientation: 'landscape', columns: 3, units: 'mm', margin: 9, gap: 12, rule: false }, front: { placement: 'last' } },
+  quadLegal: { page: { size: 'legal', orientation: 'landscape', columns: 4, units: 'in', margin: 0.3, gap: 0.45, rule: false }, front: { placement: 'last' } },
+  quadLedger: { page: { size: 'tabloid', orientation: 'landscape', columns: 4, units: 'in', margin: 0.4, gap: 0.6, rule: false }, front: { placement: 'last' } },
+  booklet: { page: { size: 'half', orientation: 'portrait', columns: 1, units: 'in', margin: 0.4, gap: 0.25, rule: false }, front: { placement: 'page' } },
+  wall: { page: { size: 'tabloid', orientation: 'portrait', columns: 4, units: 'in', margin: 0.5, gap: 0.25, rule: true }, front: { placement: 'first' } },
+  plain: { page: { size: 'letter', orientation: 'portrait', columns: 2, units: 'in', margin: 0.5, gap: 0.3, rule: true }, front: { placement: 'none' } }
+};
+const DEFAULTS = {
+  v: 1,
+  source: { server: 'https://aggregator.bmltenabled.org/main_server/', bodies: [], recursive: true, days: [1, 2, 3, 4, 5, 6, 7], inperson: true, hybrid: true, virtual: true, hideFormats: '', onlyCities: '', lang: '', lang2: '' },
+  page: { size: 'letter', orientation: 'landscape', columns: 3, units: 'in', margin: 0.35, gap: 0.5, cw: 8.5, ch: 11, rule: false },
+  front: {
+    placement: 'last', title: 'Meeting Directory', subtitle: 'Sample Area · Narcotics Anonymous', logo: '', valign: 'center', border: true, titleScale: 3,
+    body: '**Helpline {helpline}**\n\n{count} meetings every week\n\nUpdated {date}'
+  },
+  blocks: [
+    { id: 'b1', title: 'Welcome', placement: 'before', boxed: false, body: 'If you think you might have a problem with drugs, you are welcome at any meeting on this list.\n\nOpen meetings (O) welcome anyone. Closed meetings (C) are for people who think they may have a drug problem.' },
+    { id: 'b2', title: 'Area service', placement: 'after', boxed: true, body: 'The area service committee meets the second Sunday of each month at 3:00 PM at Riverside Community Center. Group service representatives and anyone interested in service are welcome.' },
+    { id: 'b3', title: 'Phone list', placement: 'back', boxed: false, body: 'Name ______________________\nPhone _____________________\n\nName ______________________\nPhone _____________________\n\nName ______________________\nPhone _____________________\n\nName ______________________\nPhone _____________________' },
+    { id: 'b4', title: 'Changes to this list', placement: 'back', boxed: false, body: 'Send new meetings, closures and changes to the area meeting list coordinator so the next printing is correct.' }
+  ],
+  shortcodes: '',
+  meetings: { group: 'day', weekStart: '1', separateVirtual: true, cont: true, layout: 'time-left', timeFmt: '12', timeTpl: '{time}', timeW: 4.3, noon: true, template: TEMPLATES.classic, legend: 'back', legendCols: '1', legendDesc: false },
+  style: { font: 'Roboto Condensed', head: 'Oswald', size: 8, lh: 1.2, space: 4, hstyle: 'bar', sep: 'dotted', accent: '#1f4e5f' }
+};
+
+/* ---------- small helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const clone = o => JSON.parse(JSON.stringify(o));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+const getPath = (o, p) => p.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
+const setPath = (o, p, v) => { const ks = p.split('.'); const last = ks.pop(); ks.reduce((a, k) => (a[k] ??= {}), o)[last] = v; };
+function merge(base, over) {
+  if (Array.isArray(base) || typeof base !== 'object' || base === null) return over === undefined ? base : over;
+  const out = clone(base); // a deep copy, so editing cfg never changes DEFAULTS
+  for (const k in over || {}) out[k] = (k in base && typeof base[k] === 'object' && !Array.isArray(base[k]) && base[k] !== null) ? merge(base[k], over[k]) : over[k];
+  return out;
+}
+const store = {
+  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+let viewMode = false; // true while looking at someone's shared list: nothing is saved over your own settings
+// A cross-origin frame (such as a preview sandbox) can't reach servers, print or download. A frame on the
+// same site, like the WordPress plugin's, works like the full page.
+const framed = (() => { try { return window.self !== window.top && !window.top.location.href; } catch { return true; } })();
+const QS = new URLSearchParams(location.search);
+const EMBED = QS.get('embed') === '1'; // hosted inside another site: no accounts, links go to meetingschedule.app
+
+/* ---------- state ---------- */
+let cfg = merge(DEFAULTS, store.get('sp-config') || {});
+if (cfg.shortcodes.trim() === 'helpline = (555) 010-0199') cfg.shortcodes = ''; // the old sample line would hide the server's helpline
+let presetLoad = false;
+if (!store.get('sp-config')) { // a first visit can start on a server and service bodies: ?server=https://…&services=12,34
+  const sv = QS.get('server'), ids = (QS.get('services') || '').split(',').map(x => x.trim()).filter(x => /^\d+$/.test(x));
+  if (sv && /^https:\/\//i.test(sv)) cfg.source.server = sv;
+  if (ids.length) { cfg.source.bodies = ids.map(id => ({ id, name: 'Service body ' + id })); presetLoad = true; } // real names fill in as the meetings load
+}
+let data = null; // { meetings, formats, source, label, at }
+
+/* ---------- sample data (fictional) ---------- */
+function sampleData() {
+  let seed = 7;
+  const rnd = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const F = [['O', 'Open', 'Anyone may attend.'], ['C', 'Closed', 'For people who think they may have a drug problem.'], ['D', 'Discussion', 'Members share on a topic.'], ['SP', 'Speaker', 'One or more members share their story.'], ['BT', 'Basic Text', 'Reading and discussion from the Basic Text.'], ['ST', 'Step Study', 'Focus on one of the Twelve Steps.'], ['TR', 'Tradition Study', 'Focus on one of the Twelve Traditions.'], ['BEG', 'Beginners', 'Focused on newcomers.'], ['W', 'Women', 'Women only.'], ['M', 'Men', 'Men only.'], ['Y', 'Young People', 'Focused on younger members.'], ['CL', 'Candlelight', 'Held by candlelight.'], ['WC', 'Wheelchair', 'Wheelchair accessible.'], ['VM', 'Virtual', 'Meets online or by phone.'], ['HY', 'Hybrid', 'Meets in person and online.']];
+  const formats = F.map((f, i) => ({ id: String(i + 1), key_string: f[0], name_string: f[1], description_string: f[2] }));
+  const places = [
+    ['Riverside Community Center', '214 River Rd', 'Riverside', 'Room 3, east door'], ['First Street Chapel', '88 First St', 'Riverside', 'Basement fellowship hall'],
+    ['Oak Hollow Library', '1520 Maple Ave', 'Oak Hollow', 'Meeting room B'], ['St. Brendan Parish Hall', '402 Church Ln', 'Millbrook', 'Behind the church'],
+    ['Millbrook Wellness House', '77 Station St', 'Millbrook', ''], ['Cedar Falls Clubhouse', '9 Mill Pond Rd', 'Cedar Falls', 'Upstairs'],
+    ['Lakeview Senior Center', '300 Shore Dr', 'Lakeview', 'Side entrance off the parking lot'], ['Grace Fellowship', '1101 Pine St', 'Oak Hollow', '']
+  ];
+  const names = ['Hope Without Dope', 'New Beginnings', 'Clean and Serene', 'Freedom Group', 'Miracles Happen', 'Keep It Simple', 'Spiritual Awakening', 'Recovery at Noon', 'Back to Basics', 'Never Alone', 'Steps to Freedom', 'Sunrise Serenity', 'Gratitude Group', 'Fresh Start', 'Easy Does It', 'Open Door', 'Surrender Group', 'Bridge to Recovery'];
+  const times = ['07:00', '12:00', '12:00', '17:30', '18:30', '19:00', '19:00', '19:30', '20:00', '20:30'];
+  const meetings = []; let id = 100;
+  for (let d = 1; d <= 7; d++) {
+    const n = 5 + Math.floor(rnd() * 3);
+    const ts = times.slice().sort(() => rnd() - 0.5).slice(0, n);
+    for (const t of ts) {
+      const r = rnd(); const venue = r < 0.12 ? 2 : r < 0.2 ? 3 : 1;
+      const p = pick(places); const name = t === '12:00' ? 'Recovery at Noon' : pick(names);
+      const fk = [rnd() < 0.6 ? 'O' : 'C', pick(['D', 'D', 'SP', 'BT', 'ST', 'TR', 'BEG'])];
+      if (rnd() < 0.25) fk.push(pick(['W', 'M', 'Y', 'CL']));
+      if (venue !== 2 && rnd() < 0.4) fk.push('WC');
+      if (venue === 2) fk.push('VM'); if (venue === 3) fk.push('HY');
+      const m = {
+        id_bigint: String(id++), meeting_name: name, weekday_tinyint: String(d), start_time: t + ':00', duration_time: rnd() < 0.3 ? '01:30:00' : '01:00:00',
+        venue_type: String(venue), formats: [...new Set(fk)].join(','), service_body_name: 'Sample Area', published: '1',
+        location_text: venue === 2 ? '' : p[0], location_street: venue === 2 ? '' : p[1], location_municipality: venue === 2 ? '' : p[2], location_province: venue === 2 ? '' : 'ST',
+        location_postal_code_1: venue === 2 ? '' : '0' + (1000 + Math.floor(rnd() * 8999)), location_info: venue === 2 ? '' : p[3], comments: rnd() < 0.15 ? 'Literature table and newcomer packets available.' : '',
+        virtual_meeting_link: venue === 1 ? '' : 'example.org/meet/' + (id % 97), phone_meeting_number: venue === 1 ? '' : '(555) 010-0' + (100 + (id % 899)), virtual_meeting_additional_info: venue === 1 ? '' : 'Meeting ID 555 01' + (id % 90 + 10)
+      };
+      meetings.push(m);
+    }
+  }
+  return { meetings, formats, source: 'sample', label: 'Sample Area (example data)', at: null };
+}
+
+/* ---------- BMLT access ---------- */
+function apiBase(server) {
+  let s = String(server || '').trim().replace(/\/+$/, '');
+  s = s.replace(/\/client_interface(\/.*)?$/, '');
+  if (!/^https?:\/\//i.test(s)) s = 'https://' + s;
+  return s + '/client_interface/';
+}
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = 'spcb' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const s = document.createElement('script');
+    const done = () => { clearTimeout(t); delete window[cb]; s.remove(); };
+    const t = setTimeout(() => { done(); reject(new Error('timed out')); }, 25000);
+    window[cb] = d => { done(); resolve(d); };
+    s.onerror = () => { done(); reject(new Error('blocked')); };
+    s.src = url + '&callback=' + cb;
+    document.head.appendChild(s);
+  });
+}
+async function bmlt(query) {
+  const base = apiBase(cfg.source.server);
+  try {
+    const r = await fetch(base + 'json/?' + query);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } catch (e) {
+    // JSONP runs the server's reply as a script, so only use it for servers in the BMLT directory or one this person typed
+    // in themselves. A list shared by someone else can't make the page run scripts from an unknown site.
+    if (!jsonpOk(base)) throw e;
+    return jsonp(base + 'jsonp/?' + query);
+  }
+}
+const typedServers = new Set();
+function jsonpOk(base) {
+  const host = u => { try { return new URL(u).host.toLowerCase(); } catch { return ''; } };
+  const h = host(base);
+  return !!h && (typedServers.has(h) || [AGGREGATOR, ...SERVERS_SNAPSHOT, ...(SERVERS || [])].some(x => host(x.url) === h));
+}
+
+/* ---------- server directory (same list tally.bmlt.app uses) ---------- */
+const SERVER_LIST_URL = 'https://raw.githubusercontent.com/bmlt-enabled/aggregator/main/serverList.json';
+const AGGREGATOR = { name: 'BMLT Aggregator (all servers)', url: 'https://aggregator.bmltenabled.org/main_server/' };
+const SERVERS_SNAPSHOT = [{"name":"Aotearoa New Zealand Region","url":"https://bmlt.nzna.org/main_server/"},{"name":"Texas, Louisiana, Mississippi, Arkansas","url":"https://texasoklahomana.org/main_server/"},{"name":"Autonomy Zone","url":"https://metrorichna.org/BMLT/main_server/"},{"name":"Greater New York Server","url":"https://bmlt.newyorkna.org/main_server/"},{"name":"Southern California Region","url":"https://todayna.org/bmlt/"},{"name":"Greater Philadelphia Region","url":"https://meetings.naworks.org/main_server/"},{"name":"Ohio Region","url":"https://bmlt.naohio.org/main_server/"},{"name":"NA India","url":"https://naindia.in/meeting_server/"},{"name":"German-Speaking Region","url":"https://www.narcotics-anonymous.de/bmlt/"},{"name":"NA Ireland","url":"https://bmlt.nasouth.ie/main_server/"},{"name":"NA Hawai'i","url":"https://na-hawaii.org/bmltmain/"},{"name":"San Jose Area","url":"https://sjna.org/main_server/"},{"name":"Wisconsin Region","url":"https://bmlt.wisconsinna.org/main_server/"},{"name":"NA New Jersey","url":"https://bmlt.nanj.org/main_server/"},{"name":"Connecticut Region","url":"https://bmlt.ctna.org/"},{"name":"Volunteer Region","url":"https://natennessee.org/main_server/"},{"name":"NA Australia","url":"https://www.na.org.au/main_server/"},{"name":"Michigan NA","url":"https://michigan-na.org/bmlt/"},{"name":"NA Minnesota","url":"https://bmlt.naminnesota.org/main_server/"},{"name":"NA Colorado","url":"https://nacolorado.org/meetingList/main_server/"},{"name":"NA Italia","url":"https://na-italia.info/main_server/"},{"name":"New England","url":"https://www.nerna.org/main_server/"},{"name":"Show-Me Region","url":"https://missourina.org/main_server/"},{"name":"NA Denmark","url":"https://www.nadanmark.dk/main_server/"},{"name":"Southeastern Zonal Forum","url":"https://bmlt.sezf.org/main_server/"},{"name":"NA Kentucky","url":"https://bmlt.bmltky.online/main_server/"},{"name":"Plains States Zonal Forum","url":"https://pszfna.org/main_server/"},{"name":"NA France","url":"https://bmlt.narcotiquesanonymes.org/"},{"name":"Canadian Assembly","url":"https://canaacna.org/meetings/main_server/"},{"name":"Brazilian Zonal Forum","url":"https://bmlt.na.org.br/ativo/main_server/"},{"name":"Greater Illinois Region","url":"https://girbmlt.org/main_server/"},{"name":"Polish Region","url":"https://bmltadmin.anonimowinarkomani.org/main_server/"},{"name":"Western States Zonal Forum","url":"https://bmlt.wszf.org/main_server/"},{"name":"Tri-State Region","url":"https://tsrscna.org/bmlt_dev/main_server/"},{"name":"Indiana Region","url":"https://bmlt.naindiana.org/main_server/"},{"name":"Montana Region","url":"https://bmlt.namontana.org/main_server/"},{"name":"NA Switzerland","url":"https://bmlt.narcotics-anonymous.ch/main_server/"},{"name":"Chicagoland Region","url":"https://bmlt.chicagona.org/main_server/"},{"name":"Paraguay","url":"https://www.na.org.py/bmlt/"},{"name":"NA Greece","url":"https://bmlt.na-greece.gr/main_server/"},{"name":"Czechoslovakia","url":"https://bmlt.eu/eu/main_server/"},{"name":"Finland","url":"https://www.nasuomi.org/bmltfi/"}];
+const normUrl = u => apiBase(u).toLowerCase();
+let SERVERS = null, serversFromSnapshot = false;
+async function loadServers() {
+  if (SERVERS) return SERVERS;
+  let list;
+  try {
+    const r = await fetch(SERVER_LIST_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    list = (await r.json()).filter(x => x && x.url).map(x => ({ name: String(x.name || x.url), url: String(x.url) }));
+  } catch { list = SERVERS_SNAPSHOT; serversFromSnapshot = true; }
+  list.sort((a, b) => a.name.localeCompare(b.name));
+  SERVERS = [AGGREGATOR, ...list];
+  return SERVERS;
+}
+function serverName(url) {
+  const n = normUrl(url);
+  return (SERVERS || [AGGREGATOR, ...SERVERS_SNAPSHOT]).find(x => normUrl(x.url) === n)?.name || '';
+}
+function renderServerStatus() {
+  const name = serverName(cfg.source.server);
+  $('#srvStatus').textContent = (name ? 'Using ' + name + '.' : 'Using a server that is not in the directory.') + (serversFromSnapshot ? ' The live server list could not be loaded, so this is the saved copy.' : '');
+}
+function renderServerResults() {
+  const box = $('#srvResults'); box.innerHTML = '';
+  if (!SERVERS || document.activeElement !== $('#srvSearch')) return;
+  const q = $('#srvSearch').value.trim().toLowerCase();
+  const hits = SERVERS.filter(x => !q || x.name.toLowerCase().includes(q) || x.url.toLowerCase().includes(q));
+  if (!hits.length) { box.innerHTML = '<div class="sb-item" style="cursor:default">No servers match. You can paste the address in the box below.</div>'; return; }
+  for (const x of hits) {
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'sb-item';
+    el.innerHTML = esc(x.name) + '<small>' + esc(x.url) + '</small>';
+    el.addEventListener('mousedown', e => e.preventDefault());
+    el.onclick = () => { setServer(x.url); $('#srvSearch').value = ''; $('#srvSearch').blur(); box.innerHTML = ''; };
+    box.appendChild(el);
+  }
+}
+let committedServer = null;
+function setServer(url) {
+  const changed = normUrl(url) !== normUrl(committedServer ?? cfg.source.server);
+  cfg.source.server = url; $('#server').value = url; committedServer = url; SB = null;
+  if (changed && cfg.source.bodies.length) {
+    cfg.source.bodies = []; renderChips();
+    const st = $('#sbStatus'); st.className = 'status'; st.textContent = 'Service bodies were cleared because each server numbers them differently. Search again to pick them.';
+  }
+  save(); renderServerStatus(); loadLangs();
+}
+
+/* ---------- print language ---------- */
+const COMMON_LANGS = ['en', 'es', 'fr', 'de', 'it', 'pt', 'pl', 'sv', 'da', 'fa', 'ru', 'ja'];
+function langLabel(code) { try { const n = new Intl.DisplayNames([code], { type: 'language' }).of(code); return n && n !== code ? n.charAt(0).toLocaleUpperCase(code) + n.slice(1) + ' (' + code + ')' : code; } catch { return code; } }
+let langCodes = COMMON_LANGS, langNative = '';
+function fillLangs() { // rebuilt whenever settings change, so a saved language always has its option
+  const cur = cfg.source.lang || '', native = langNative;
+  const list = [...new Set([...langCodes, ...(cur ? [cur] : [])])];
+  $('#lang').innerHTML = '<option value="">Server\'s default' + (native ? ' (' + esc(langLabel(native).replace(/ \(.*\)$/, '')) + ')' : '') + '</option>' + list.map(c => '<option value="' + esc(c) + '">' + esc(langLabel(c)) + '</option>').join('');
+  $('#lang').value = cur;
+  const cur2 = cfg.source.lang2 || '';
+  $('#lang2').innerHTML = '<option value="">No second language</option>' + [...new Set([...COMMON_LANGS, ...langCodes, ...(cur2 ? [cur2] : [])])].map(c => '<option value="' + esc(c) + '">' + esc(langLabel(c)) + '</option>').join('');
+  $('#lang2').value = cur2;
+}
+let langsFor = null;
+async function loadLangs() { // the languages this server has translations for
+  const srv = cfg.source.server; if (langsFor === srv) return; langsFor = srv;
+  try {
+    const d = await bmlt('switcher=GetServerInfo'); const info = Array.isArray(d) ? d[0] : d;
+    const langs = String(info?.langs || '').split(',').map(x => x.trim()).filter(Boolean);
+    if (langsFor === srv && langs.length) { langCodes = langs; langNative = String(info.nativeLang || ''); fillLangs(); }
+  } catch { /* keep the common list */ }
+}
+
+let SB = null; // service body list
+async function loadBodies() {
+  if (SB) return SB;
+  const st = $('#sbStatus'); st.className = 'status'; st.textContent = 'Loading service bodies…';
+  try {
+    const d = await bmlt('switcher=GetServiceBodies');
+    SB = (Array.isArray(d) ? d : []).map(b => ({ id: String(b.id), parent: String(b.parent_id), name: b.name, type: b.type, helpline: String(b.helpline || '').trim(), url: String(b.url || '').trim() }));
+    const byId = Object.fromEntries(SB.map(b => [b.id, b]));
+    SB.forEach(b => { b.parentName = byId[b.parent]?.name || ''; });
+    cfg.source.bodies.forEach(c => { const b = byId[c.id]; if (b) { c.name = b.name; c.helpline = b.helpline; c.url = b.url; } }); // keep them with the list for printing without the server
+    renderChips();
+    st.textContent = SB.length + ' service bodies available. Type to search.';
+    return SB;
+  } catch (e) {
+    SB = null; st.className = 'status err';
+    st.textContent = "Couldn't reach " + apiBase(cfg.source.server) + '. Check the server address and your connection.';
+    return null;
+  }
+}
+const SB_TYPE = { RS: 'Region', AS: 'Area', ZF: 'Zone', MA: 'Metro', WS: 'World', NS: 'National', LS: 'Local', GR: 'Group', SB: 'Service body' };
+function renderSbResults() {
+  const q = $('#sbSearch').value.trim().toLowerCase(); const box = $('#sbResults'); box.innerHTML = '';
+  if (!q || !SB) return;
+  const chosen = new Set(cfg.source.bodies.map(b => b.id));
+  const hits = SB.filter(b => !chosen.has(b.id) && (b.name || '').toLowerCase().includes(q)).slice(0, 60);
+  if (!hits.length) { box.innerHTML = '<div class="sb-item" style="cursor:default">No service bodies match.</div>'; return; }
+  for (const b of hits) {
+    const el = document.createElement('button'); el.type = 'button'; el.className = 'sb-item';
+    el.innerHTML = esc(b.name) + '<small>' + esc([SB_TYPE[b.type] || b.type, b.parentName && 'in ' + b.parentName].filter(Boolean).join(' · ')) + '</small>';
+    el.onclick = () => { cfg.source.bodies.push({ id: b.id, name: b.name, helpline: b.helpline, url: b.url }); $('#sbSearch').value = ''; save(); renderChips(); renderSbResults(); };
+    box.appendChild(el);
+  }
+}
+function renderChips() {
+  const box = $('#sbChips'); box.innerHTML = '';
+  cfg.source.bodies.forEach((b, i) => {
+    const c = document.createElement('span'); c.className = 'chip';
+    c.innerHTML = esc(b.name) + ' <button type="button" aria-label="Remove ' + esc(b.name) + '">×</button>';
+    c.querySelector('button').onclick = () => { cfg.source.bodies.splice(i, 1); save(); renderChips(); renderSbResults(); };
+    box.appendChild(c);
+  });
+}
+async function loadMeetings() {
+  const st = $('#loadStatus');
+  if (!cfg.source.bodies.length) { st.className = 'status err'; st.textContent = 'Pick at least one service body first.'; return; }
+  st.className = 'status'; st.textContent = 'Loading meetings…';
+  const q = 'switcher=GetSearchResults&get_used_formats=1' + (cfg.source.lang ? '&lang_enum=' + encodeURIComponent(cfg.source.lang) : '') + (cfg.source.recursive ? '&recursive=1' : '') + cfg.source.bodies.map(b => '&services[]=' + encodeURIComponent(b.id)).join('');
+  try {
+    const d = await bmlt(q);
+    const meetings = Array.isArray(d) ? d : (d.meetings || []);
+    const formats = Array.isArray(d) ? [] : (d.formats || []);
+    // meetings carry only a service body number; keep the names of the ones in use
+    const sbs = await loadBodies(), used = new Set(meetings.map(m => String(m.service_body_bigint ?? '')));
+    const bodies = Object.fromEntries((sbs || []).filter(b => used.has(b.id)).map(b => [b.id, b.name]));
+    data = { meetings, formats, bodies, source: 'live', label: cfg.source.bodies.map(b => b.name).join(', '), at: new Date().toISOString() };
+    if (!viewMode && !store.set('sp-data', data)) store.set('sp-data', null);
+    st.className = 'status ok'; st.textContent = 'Loaded ' + meetings.length + ' meetings.';
+    scheduleRender(0);
+  } catch (e) {
+    st.className = 'status err';
+    st.textContent = "Couldn't load meetings from " + apiBase(cfg.source.server) + (framed ? '. This embedded preview cannot reach outside servers; open the HTML file directly.' : '. Check the server address and your connection.');
+  }
+}
+
+/* ---------- meeting model ---------- */
+const hm = s => { const [h, m] = String(s || '0:0').split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+function fmtTime(min) {
+  min = ((min % 1440) + 1440) % 1440; const h = Math.floor(min / 60), m = min % 60; const f = cfg.meetings.timeFmt;
+  if (cfg.meetings.noon && m === 0 && (h === 12 || h === 0)) { const w = word(h === 12 ? 'noon' : 'midnight'); if (w) return w; }
+  if (f === '24') return pad(h) + ':' + pad(m);
+  const h12 = h % 12 || 12;
+  if (f === '12short') return h12 + ':' + pad(m) + (h < 12 ? 'a' : 'p');
+  return h12 + ':' + pad(m) + ' ' + (h < 12 ? 'AM' : 'PM');
+}
+function fmtDur(min) { if (!min) return ''; const h = Math.floor(min / 60), m = min % 60; return [h && h + ' hr', m && m + ' min'].filter(Boolean).join(' '); }
+function normalize(raw, fmtByKey, fmtById = {}) {
+  const s = k => String(raw[k] ?? '').trim();
+  const link = s('virtual_meeting_link'), phone = s('phone_meeting_number');
+  let venue = Number(raw.venue_type) || 0;
+  if (!venue) venue = (link || phone) ? (s('location_street') ? 3 : 2) : 1;
+  let keys = s('formats').split(',').map(x => x.trim()).filter(Boolean);
+  if (keys.some(k => !fmtByKey[k])) { // codes in another language than the format list: match them up by format id instead
+    const byId = s('format_shared_id_list').split(',').map(x => fmtById[x.trim()]?.key_string).filter(Boolean);
+    if (byId.length) keys = byId;
+  }
+  const start = hm(raw.start_time), dur = hm(raw.duration_time || '01:00');
+  const city = s('location_municipality'), state = s('location_province'), zip = s('location_postal_code_1');
+  const cityLine = [city, [state, zip].filter(Boolean).join(' ')].filter(Boolean).join(', ');
+  return {
+    id: s('id_bigint'), day: Number(raw.weekday_tinyint) || 1, start, venue, keys, city,
+    vals: {
+      name: s('meeting_name'), time: fmtTime(start), end_time: fmtTime(start + dur), time_range: fmtTime(start) + '–' + fmtTime(start + dur), duration: fmtDur(dur),
+      day: dayName(Number(raw.weekday_tinyint) || 1), location: s('location_text'), info: s('location_info'), street: s('location_street'), city,
+      neighborhood: s('location_neighborhood'), county: s('location_sub_province'), state, zip, nation: s('location_nation'),
+      address: [s('location_street'), cityLine].filter(Boolean).join(', '), formats: keys.join(', '),
+      format_names: keys.map(k => fmtByKey[k]?.name_string || k).join(', '), venue: VENUE[venue] || '', link: link.replace(/^https?:\/\//, ''), phone,
+      virtual_info: s('virtual_meeting_additional_info'), comments: s('comments'), service_body: s('service_body_name') || data?.bodies?.[s('service_body_bigint')] || '', bus: s('bus_lines'), train: s('train_lines'),
+      contact_name: s('contact_name_1'), contact_phone: s('contact_phone_1'), contact_email: s('contact_email_1')
+    }
+  };
+}
+const csv = s => String(s || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean);
+function currentMeetings() {
+  const fmtByKey = Object.fromEntries((data?.formats || []).map(f => [f.key_string, f]));
+  const fmtById = Object.fromEntries((data?.formats || []).map(f => [String(f.id), f]));
+  const hide = new Set(csv(cfg.source.hideFormats)); const cities = new Set(csv(cfg.source.onlyCities));
+  const days = new Set(cfg.source.days.map(Number));
+  const okVenue = { 1: cfg.source.inperson, 2: cfg.source.virtual, 3: cfg.source.hybrid };
+  const list = (data?.meetings || []).filter(m => String(m.published ?? '1') !== '0').map(m => normalize(m, fmtByKey, fmtById))
+    .filter(m => days.has(m.day) && okVenue[m.venue] !== false && !m.keys.some(k => hide.has(k.toLowerCase())) && (!cities.size || cities.has(m.city.toLowerCase())));
+  const used = new Set(list.flatMap(m => m.keys));
+  const formats = (data?.formats || []).filter(f => used.has(f.key_string)).sort((a, b) => a.key_string.localeCompare(b.key_string));
+  return { list, formats };
+}
+
+/* ---------- tiny markup ---------- */
+// Inline styling: **bold** *italic* __underline__ ~~strike~~ ^^larger^^ ,,smaller,, {color #c00}coloured{/color}
+// Three or more underscores become a write-in line; in block text it stretches to the end of the column.
+const inlineMd = s => s
+  .replace(/_{3,}/g, '<span class="fill"></span>')
+  .replace(/\{color (#[0-9a-fA-F]{3,6})\}(.+?)\{\/color\}/g, '<span style="color:$1">$2</span>')
+  .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+  .replace(/__([^_].*?)__/g, '<u>$1</u>')
+  .replace(/~~(.+?)~~/g, '<s>$1</s>')
+  .replace(/\^\^(.+?)\^\^/g, '<span class="fx-big">$1</span>')
+  .replace(/,,(.+?),,/g, '<span class="fx-small">$1</span>')
+  .replace(/\*(.+?)\*/g, '<i>$1</i>');
+const FX = { b: ['**', '**'], i: ['*', '*'], u: ['__', '__'], s: ['~~', '~~'], big: ['^^', '^^'], small: [',,', ',,'] };
+const FX_STRIP = [/\*\*(.*?)\*\*/g, /__(.*?)__/g, /~~(.*?)~~/g, /\^\^(.*?)\^\^/g, /,,(.*?),,/g, /\{color #[0-9a-fA-F]{3,6}\}(.*?)\{\/color\}/g, /\*(.*?)\*/g];
+const plainText = s => FX_STRIP.reduce((t, re) => t.replace(re, '$1'), String(s || ''));
+function fmtBar(id) {
+  return '<div class="fmtbar" role="toolbar" aria-label="Text formatting" data-for="' + id + '">' +
+    '<button type="button" data-fx="b" title="Bold (Ctrl+B)"><b>B</b></button><button type="button" data-fx="i" title="Italic (Ctrl+I)"><i>I</i></button>' +
+    '<button type="button" data-fx="u" title="Underline (Ctrl+U)"><u>U</u></button><button type="button" data-fx="s" title="Strikethrough"><s>S</s></button><span class="gap"></span>' +
+    '<button type="button" data-fx="big" title="Larger text">A+</button><button type="button" data-fx="small" title="Smaller text">A−</button>' +
+    '<label title="Text colour">Colour <input type="color" data-fx="color" value="#b3261e" aria-label="Text colour"></label><span class="gap"></span>' +
+    '<button type="button" data-fx="clear" title="Remove formatting from the selection">Clear</button><span class="gap"></span>' +
+    '<button type="button" data-fx="line" title="Add a write-in line that runs to the edge of the column">+ Line</button></div>';
+}
+// Wraps the selection in markup, or removes it when the selection is already wrapped.
+function applyFx(t, fx, color) {
+  let s = t.selectionStart, e = t.selectionEnd, v = t.value;
+  if (fx === 'line') {
+    // In an entry made of labelled write-in lines (Name ___ / Phone ___), add another blank entry
+    // after it; anywhere else, add one plain write-in line under the cursor's line.
+    const ps = v.lastIndexOf('\n\n', s - 1), pStart = ps < 0 ? 0 : ps + 2, pe = v.indexOf('\n\n', e), pEnd = pe < 0 ? v.replace(/\s+$/, '').length : pe;
+    const lines = v.slice(pStart, pEnd).split('\n').filter(l => l.trim());
+    const entry = lines.length && lines.every(l => /_{3,}/.test(l)) && lines.some(l => /[^_\s]/.test(l));
+    let at, add;
+    if (entry) { at = pEnd; add = '\n\n' + lines.map(l => l.replace(/_{3,}/g, '___')).join('\n'); }
+    else { at = v.indexOf('\n', e) < 0 ? v.length : v.indexOf('\n', e); add = (at && v[at - 1] !== '\n' ? '\n' : '') + '___'; }
+    t.value = v.slice(0, at) + add + v.slice(at); t.selectionStart = t.selectionEnd = at + add.length;
+    t.focus(); t.dispatchEvent(new Event('input')); return;
+  }
+  if (fx === 'clear') {
+    if (s === e) { s = v.lastIndexOf('\n', s - 1) + 1; e = v.indexOf('\n', e); if (e < 0) e = v.length; }
+    let sel = v.slice(s, e); FX_STRIP.forEach(re => { sel = sel.replace(re, '$1'); });
+    t.value = v.slice(0, s) + sel + v.slice(e); t.selectionStart = s; t.selectionEnd = s + sel.length;
+  } else {
+    const [a, b] = fx === 'color' ? ['{color ' + color + '}', '{/color}'] : FX[fx];
+    if (fx !== 'color' && v.slice(s - a.length, s) === a && v.slice(e, e + b.length) === b) {
+      t.value = v.slice(0, s - a.length) + v.slice(s, e) + v.slice(e + b.length);
+      t.selectionStart = s - a.length; t.selectionEnd = e - a.length;
+    } else {
+      const sel = v.slice(s, e) || 'text';
+      t.value = v.slice(0, s) + a + sel + b + v.slice(e);
+      t.selectionStart = s + a.length; t.selectionEnd = s + a.length + sel.length;
+    }
+  }
+  t.focus(); t.dispatchEvent(new Event('input'));
+}
+function renderTpl(tpl, vals) {
+  const empty = k => !String(vals[k] ?? '').trim();
+  const out = [];
+  for (let line of String(tpl || '').split('\n')) {
+    line = line.replace(/\[([^\[\]]*)\]/g, (all, inner) => {
+      const ks = [...inner.matchAll(/\{(\w+)\}/g)].map(x => x[1]);
+      return ks.length && ks.some(k => k in vals && empty(k)) ? '' : inner;
+    });
+    const ks = [...line.matchAll(/\{(\w+)\}/g)].map(x => x[1]);
+    if (ks.length && ks.every(k => k in vals && empty(k))) continue;
+    let html = inlineMd(esc(line)).replace(/\{(\w+)\}/g, (a, k) => (k in vals ? esc(vals[k]) : a));
+    if (!html.replace(/<[^>]+>/g, '').trim()) continue;
+    out.push(html);
+  }
+  return out;
+}
+function textVars(text, vars) { return String(text || '').replace(/\{(\w+)\}/g, (a, k) => (k in vars ? vars[k] : a)); }
+function paragraphs(text, vars) { // returns html strings, one per paragraph
+  return textVars(text, vars).split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => {
+    const lines = p.split('\n');
+    if (lines.every(l => /^\s*[-•]\s+/.test(l))) return '<ul>' + lines.map(l => '<li>' + inlineMd(esc(l.replace(/^\s*[-•]\s+/, ''))) + '</li>').join('') + '</ul>';
+    if (/^#+\s/.test(lines[0]) && lines.length === 1) return '<h4>' + inlineMd(esc(lines[0].replace(/^#+\s/, ''))) + '</h4>';
+    return lines.map(l => inlineMd(esc(l))).map(h => h.includes('class="fill"') ? '<span class="fline">' + h + '</span>' : h)
+      .reduce((a, h, i, all) => a + (i && !h.startsWith('<span class="fline">') && !all[i - 1].startsWith('<span class="fline">') ? '<br>' : '') + h, '');
+  });
+}
+
+/* ---------- flow building ---------- */
+function blockItems(b, vars) {
+  const items = blockItemsOnly(b, vars);
+  if (b.newCol && items.length) items[0].breakBefore = true; // start at the top of the next column
+  return items;
+}
+function blockItemsOnly(b, vars) {
+  const ps = paragraphs(b.body, vars);
+  if (b.boxed) return [{ cls: 'it boxed', html: (b.title ? '<div class="btitle">' + inlineMd(esc(sc(b.title))) + '</div>' : '') + ps.map(p => '<div class="bp">' + p + '</div>').join('') }];
+  const items = [];
+  if (b.title) items.push({ cls: 'it bt', html: inlineMd(esc(sc(b.title))), keep: true });
+  ps.forEach(p => items.push({ cls: 'it bp', html: p }));
+  return items;
+}
+function legendItems(formats, cols = Number(cfg.meetings.legendCols) || 1) {
+  if (!formats.length) return [];
+  const items = [{ cls: 'it bt', html: esc(word('formats')), keep: true }];
+  const entry = f => '<b>' + esc(f.key_string) + '</b><span>' + esc(f.name_string) + (cfg.meetings.legendDesc && f.description_string ? '<div class="lg-desc">' + esc(f.description_string) + '</div>' : '') + '</span>';
+  if (cols <= 1) { for (const f of formats) items.push({ cls: 'it lg', html: entry(f) }); return items; }
+  // several columns: read down each column, one row per flow item so the key can still split across page columns
+  const rows = Math.ceil(formats.length / cols);
+  for (let r = 0; r < rows; r++) {
+    const cells = [];
+    for (let c = 0; c < cols; c++) { const f = formats[c * rows + r]; cells.push('<div class="lg">' + (f ? entry(f) : '') + '</div>'); }
+    items.push({ cls: 'it lgrow', html: '<div class="lgrow-in" style="grid-template-columns: repeat(' + cols + ', minmax(0, 1fr))">' + cells.join('') + '</div>' });
+  }
+  return items;
+}
+function meetingItem(m) {
+  const vals = { ...SHORT, ...m.vals };
+  const lines = renderTpl(cfg.meetings.template, vals).map(l => '<div>' + l + '</div>').join('');
+  if (cfg.meetings.layout === 'time-left') {
+    const t = renderTpl(cfg.meetings.timeTpl, vals).map(l => '<div>' + l + '</div>').join('');
+    return { cls: 'it mtg tl', html: '<div class="mtg-time">' + t + '</div><div class="mtg-body">' + lines + '</div>' };
+  }
+  return { cls: 'it mtg', html: '<div class="mtg-body">' + lines + '</div>' };
+}
+function meetingSection(list) {
+  const ws = Number(cfg.meetings.weekStart) || 1;
+  const dayOrd = d => (d - ws + 7) % 7;
+  const levels = cfg.meetings.group === 'none' ? [] : cfg.meetings.group.split('-');
+  const key = { day: m => dayOrd(m.day), city: m => (m.city || '￿').toLowerCase(), body: m => (m.vals.service_body || '￿').toLowerCase() };
+  const label = { day: m => dayName(m.day), city: m => m.city || word('other'), body: m => m.vals.service_body || word('nobody') };
+  const cmp = (a, b) => { for (const l of levels) { const x = key[l](a), y = key[l](b); if (x !== y) return x < y ? -1 : 1; } return dayOrd(a.day) - dayOrd(b.day) || a.start - b.start || a.vals.name.localeCompare(b.vals.name); };
+  const items = []; const cur = [];
+  for (const m of list.slice().sort(cmp)) {
+    levels.forEach((l, i) => {
+      const v = label[l](m);
+      if (cur[i] !== v) {
+        cur[i] = v; cur.length = i + 1;
+        items.push(i === 0 ? { cls: 'it h1', html: '<span>' + esc(v) + '</span>', keep: true, head: { lvl: 1, text: v } } : { cls: 'it h2', html: esc(v), keep: true, head: { lvl: 2, text: v } });
+      }
+    });
+    const it = meetingItem(m);
+    it.ctx = levels.map((l, i) => ({ lvl: i + 1, text: cur[i] }));
+    items.push(it);
+  }
+  return items;
+}
+// Shortcodes: {date}, {count} and the rest work in every text box, headings and meeting templates included.
+let SHORT = {};
+function shortcodes(meet) {
+  const now = new Date(), loc = printLang() || undefined, list = meet?.list || [];
+  const out = {
+    date: now.toLocaleDateString(loc, { month: 'long', year: 'numeric' }), month: now.toLocaleDateString(loc, { month: 'long' }), year: String(now.getFullYear()),
+    today: now.toLocaleDateString(loc, { year: 'numeric', month: 'long', day: 'numeric' }), count: String(list.length),
+    in_person: String(list.filter(m => m.venue !== 2).length), virtual: String(list.filter(m => m.venue === 2).length), hybrid: String(list.filter(m => m.venue === 3).length),
+    area: cfg.source.bodies.map(b => b.name).join(', ') || [...new Set(list.map(m => m.vals.service_body).filter(Boolean))].join(', ')
+  };
+  out.service_body = out.area; // the meeting field of the same name, for text outside the meeting list
+  const distinct = k => [...new Set(list.map(m => String(m.vals[k] || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, loc)).join(', ');
+  out.cities = distinct('city'); out.counties = distinct('county'); // every place the listed meetings are in, A to Z
+  // {helpline} and {url} come from the server's service body record: the first chosen body that has one
+  const fromBody = k => (cfg.source.bodies.find(b => b[k]) || {})[k] || '';
+  out.helpline = fromBody('helpline'); out.url = fromBody('url');
+  if (data?.source === 'sample' && !cfg.source.bodies.length) { out.helpline = '(555) 010-0199'; out.url = 'example.org'; }
+  for (const line of String(cfg.shortcodes || '').split('\n')) { // your own: "helpline = (555) 010-0199"
+    const m = /^\s*\{?(\w+)\}?\s*[=:]\s*(.*?)\s*$/.exec(line); if (m) out[m[1]] = m[2];
+  }
+  return out;
+}
+const sc = text => textVars(text, SHORT);
+function buildFlow(meet) {
+  const vars = SHORT = shortcodes(meet);
+  const items = [];
+  const blocks = where => cfg.blocks.filter(b => b.placement === where).forEach(b => items.push(...blockItems(b, vars)));
+  blocks('before');
+  if (!meet.list.length) items.push({ cls: 'it empty-note', html: data ? 'No meetings match the current filters.' : 'Load meetings or use the sample data to see your schedule.' });
+  if (cfg.meetings.separateVirtual) {
+    const phys = meet.list.filter(m => m.venue !== 2), virt = meet.list.filter(m => m.venue === 2);
+    items.push(...meetingSection(phys));
+    if (virt.length) { items.push({ cls: 'it h0', html: esc(word('virtual')), keep: true }); items.push(...meetingSection(virt)); }
+  } else items.push(...meetingSection(meet.list));
+  blocks('after');
+  if (cfg.meetings.legend === 'after') items.push(...legendItems(meet.formats));
+  const back = [];
+  cfg.blocks.filter(b => b.placement === 'back').forEach(b => back.push(...blockItems(b, vars)));
+  if (cfg.meetings.legend === 'back') back.push(...legendItems(meet.formats));
+  if (back.length) { back[0].breakBefore = true; items.push(...back); }
+  return { items, vars };
+}
+function frontHtml(meet, vars) {
+  const f = cfg.front; let h = '';
+  if (f.logo) h += '<img class="logo" alt="" src="' + esc(f.logo) + '">';
+  if (f.title) h += '<div class="ft">' + inlineMd(esc(sc(f.title))) + '</div>';
+  if (f.subtitle) h += '<div class="fs">' + inlineMd(esc(sc(f.subtitle))) + '</div>';
+  const ps = paragraphs(f.body, vars);
+  if (ps.length) h += '<div class="fb">' + ps.map(p => '<p>' + p + '</p>').join('') + '</div>';
+  const extra = [];
+  cfg.blocks.filter(b => b.placement === 'front').forEach(b => extra.push(...blockItems(b, vars)));
+  if (cfg.meetings.legend === 'front') extra.push(...legendItems(meet.formats));
+  if (extra.length) h += '<div class="fextra">' + extra.map(i => '<div class="' + i.cls + '">' + i.html + '</div>').join('') + '</div>';
+  return h;
+}
+
+/* ---------- pagination ---------- */
+const toIn = v => (cfg.page.units === 'mm' ? Number(v) / 25.4 : Number(v));
+function pageDims() {
+  const s = SIZES[cfg.page.size] || SIZES.letter;
+  let w = s.w ?? toIn(cfg.page.cw), h = s.h ?? toIn(cfg.page.ch);
+  w = Math.max(1, w || 8.5); h = Math.max(1, h || 11);
+  const land = cfg.page.orientation === 'landscape';
+  if (land ? w < h : w > h) [w, h] = [h, w];
+  return { w, h, name: s.n };
+}
+function docVars(el) {
+  const st = cfg.style; const m = Math.max(0, toIn(cfg.page.margin) || 0);
+  Object.assign(el.style, { padding: m + 'in' });
+  el.style.setProperty('--doc-font', FONTS[st.font] || FONTS.Arial);
+  el.style.setProperty('--doc-head', FONTS[st.head] || FONTS.Arial);
+  el.style.setProperty('--doc-size', (Number(st.size) || 8) + 'pt');
+  el.style.setProperty('--doc-lh', Number(st.lh) || 1.2);
+  el.style.setProperty('--doc-space', (Number(st.space) || 0) + 'pt');
+  el.style.setProperty('--doc-accent', st.accent || '#000');
+  el.style.setProperty('--doc-gap', Math.max(0, toIn(cfg.page.gap) || 0) + 'in');
+  el.style.setProperty('--doc-timew', (Number(cfg.meetings.timeW) || 4) + 'em');
+  el.style.setProperty('--doc-titlex', Number(cfg.front.titleScale) || 3);
+}
+function makeEl(it) { const d = document.createElement('div'); d.className = it.cls; d.innerHTML = it.html; if (it.keep) d._keep = true; return d; }
+const overflows = col => col.scrollHeight > col.clientHeight + 1;
+
+let sheets = [];
+function paginate(flow, meet) {
+  const host = $('#sheets'); host.innerHTML = ''; sheets = [];
+  const dim = pageDims(); const ncol = Math.max(1, Math.min(8, Math.round(cfg.page.columns) || 1));
+  const fp = cfg.front.placement;
+  const inCol = fp === 'first' || fp === 'last' || fp === 'back';
+  const frontWhole = fp === 'page' || (inCol && ncol === 1);
+  const st = cfg.style;
+  function newSheet(kind) {
+    const wrap = document.createElement('div'); wrap.className = 'sheet-wrap';
+    const label = document.createElement('div'); label.className = 'sheet-label';
+    const box = document.createElement('div'); box.className = 'sheet-box';
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet hs-' + st.hstyle + ' sep-' + st.sep + (cfg.page.rule ? ' rule' : '');
+    sheet.style.width = dim.w + 'in'; sheet.style.height = dim.h + 'in';
+    docVars(sheet);
+    const cols = document.createElement('div'); cols.className = 'cols'; sheet.appendChild(cols);
+    box.appendChild(sheet); wrap.append(label, box); host.appendChild(wrap);
+    const rec = { wrap, label, box, sheet, cols: [] };
+    const n = kind === 'whole' ? 1 : ncol;
+    for (let i = 0; i < n; i++) { const c = document.createElement('div'); c.className = 'col'; cols.appendChild(c); rec.cols.push(c); }
+    sheets.push(rec); return rec;
+  }
+  const front = document.createElement('div');
+  front.className = 'front v-' + cfg.front.valign + (cfg.front.border ? ' bordered' : '');
+  front.innerHTML = frontHtml(meet, flow.vars);
+  let avail = []; // flow columns on current sheet
+  front._front = true;
+  if (fp !== 'none' && fp !== 'back' && frontWhole) {
+    const s = newSheet('whole'); s.cols[0].appendChild(front); s.front = front;
+  } else if (fp === 'first' || fp === 'last') {
+    const s = newSheet(); const fc = fp === 'first' ? s.cols[0] : s.cols[ncol - 1];
+    fc.appendChild(front); s.front = front;
+    avail = s.cols.filter(c => c !== fc);
+  }
+  let ci = 0;
+  const col = () => { if (ci >= avail.length) { avail = newSheet().cols; ci = 0; } return avail[ci]; };
+  const advance = () => { ci++; return col(); };
+  const contHead = h => { const it = h.lvl === 1 ? { cls: 'it h1', html: '<span>' + esc(h.text) + ' <span class="cont">' + esc(word('continued')) + '</span></span>', keep: true } : { cls: 'it h2', html: esc(h.text) + ' <span class="cont" style="font-weight:400">' + esc(word('cont')) + '</span>', keep: true }; const el = makeEl(it); el._it = it; return el; };
+  for (const it of flow.items) {
+    let c = col();
+    if (it.breakBefore && c.children.length) c = advance();
+    const el = makeEl(it); el._it = it; c.appendChild(el);
+    if (!overflows(c)) continue;
+    c.removeChild(el);
+    const carried = [];
+    while (c.lastElementChild && c.lastElementChild._keep) carried.unshift(c.removeChild(c.lastElementChild));
+    if (!c.children.length) { // nothing left to keep: item is taller than a column
+      carried.forEach(x => c.appendChild(x)); c.appendChild(el); c.classList.add('over'); continue;
+    }
+    const n = advance();
+    if (!carried.length && cfg.meetings.cont && it.ctx) it.ctx.forEach(h => n.appendChild(contHead(h)));
+    carried.forEach(x => n.appendChild(x)); n.appendChild(el);
+    if (overflows(n)) n.classList.add('over');
+  }
+  if (fp === 'back') { // back cover: last column of the last page, or a page of its own
+    let s = sheets[sheets.length - 1], fc = s && !frontWhole && s.cols.length === ncol ? s.cols[ncol - 1] : null;
+    if (!fc || fc.children.length) { s = newSheet(frontWhole ? 'whole' : undefined); fc = s.cols[s.cols.length - 1]; }
+    fc.appendChild(front); s.front = front;
+  }
+  sheets.forEach(s => { if (s.front && overflows(s.front.parentElement)) s.front.parentElement.classList.add('over'); });
+  // labels
+  const total = sheets.length;
+  sheets.forEach((s, i) => {
+    const overs = $$('.col.over', s.sheet).length;
+    s.label.innerHTML = '<span>Page ' + (i + 1) + ' of ' + total + '</span><span>' + esc(dim.name) + ' · ' + sizeText(dim) + '</span>' + (overs ? '<span class="warn">' + overs + ' column' + (overs > 1 ? 's' : '') + ' overflow: shrink the text or reduce spacing</span>' : '');
+  });
+  $('#pageCount').textContent = total + (total === 1 ? ' page' : ' pages');
+  $('#pageSize').textContent = '@page { size: ' + dim.w.toFixed(3) + 'in ' + dim.h.toFixed(3) + 'in; margin: 0 }';
+  rescale();
+}
+function sizeText(d) {
+  if (cfg.page.units === 'mm' || SIZES[cfg.page.size]?.mm) return Math.round(d.w * 25.4) + ' × ' + Math.round(d.h * 25.4) + ' mm';
+  return (+d.w.toFixed(2)) + ' × ' + (+d.h.toFixed(2)) + ' in';
+}
+function rescale() {
+  if (!sheets.length) return;
+  const dim = pageDims(); const wpx = dim.w * 96, hpx = dim.h * 96;
+  const desk = $('#desk'); const cs = getComputedStyle(desk);
+  const avail = desk.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  const z = $('#zoom').value;
+  const sc = z === 'fit' ? Math.min(1.25, avail / wpx) : Number(z);
+  for (const s of sheets) {
+    s.box.style.width = wpx * sc + 'px'; s.box.style.height = hpx * sc + 'px';
+    s.sheet.style.transform = 'scale(' + sc + ')';
+  }
+}
+
+/* ---------- render loop ---------- */
+let renderTimer = 0, renderSeq = 0;
+function scheduleRender(delay = 160) { clearTimeout(renderTimer); renderTimer = setTimeout(render, delay); }
+async function render() {
+  const seq = ++renderSeq;
+  const st = cfg.style; const fams = [st.font, st.head].filter(f => FONTS[f] && !['Arial', 'Georgia'].includes(f));
+  try { await Promise.race([Promise.all(fams.flatMap(f => ['400', '700', 'italic 400'].map(w => document.fonts.load(w + ' 10pt "' + f + '"')))), new Promise(r => setTimeout(r, 2500))]); } catch {}
+  if (seq !== renderSeq) return;
+  const meet = currentMeetings();
+  paginate(buildFlow(meet), meet);
+  updatePill(meet);
+}
+function updatePill(meet) {
+  const p = $('#dataPill');
+  if (!data) { p.className = 'pill'; p.innerHTML = '<span>No meetings loaded</span>'; return; }
+  const live = data.source === 'live';
+  p.className = 'pill ' + (live ? 'live' : 'sample');
+  const when = live && data.at ? ' · ' + new Date(data.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+  p.innerHTML = '<span>' + esc(data.label) + ' · ' + meet.list.length + ' meetings' + esc(when) + '</span>';
+  p.title = data.label;
+}
+
+/* ---------- settings UI ---------- */
+function save() { if (viewMode) return; if (!store.set('sp-config', cfg)) { const s = $('#logoStatus'); if (cfg.front.logo) { s.className = 'status err'; s.textContent = 'This logo is too large to keep between visits. It will print now, but use a smaller file to keep it.'; } } }
+function readEl(el, prev) {
+  if (el.type === 'checkbox') return el.checked;
+  if (el.type === 'number') { const v = parseFloat(el.value); return Number.isFinite(v) ? v : prev; }
+  return el.value;
+}
+function writeEl(el, v) { if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? ''; }
+// Show which preset the current paper, columns and front panel match, or "Custom layout"
+function syncPreset() {
+  const pg = cfg.page;
+  $('#preset').value = Object.keys(PRESETS).find(k => {
+    const p = PRESETS[k];
+    return p.page.size === pg.size && p.page.orientation === pg.orientation && p.page.columns === Number(pg.columns) && p.front.placement === cfg.front.placement;
+  }) || '';
+}
+function fillControls() {
+  fillLangs();
+  $$('[data-path]').forEach(el => writeEl(el, getPath(cfg, el.dataset.path)));
+  $$('#dayChecks input').forEach(el => { el.checked = cfg.source.days.includes(Number(el.value)); });
+  $$('.u').forEach(u => { u.textContent = cfg.page.units; });
+  $('#customSize').hidden = cfg.page.size !== 'custom';
+  renderChips(); renderBlocks(); syncPreset();
+}
+function onPathChange(path, el, prev) {
+  if (path === 'page.units' && prev !== el.value) {
+    const f = el.value === 'mm' ? 25.4 : 1 / 25.4; const r = x => Math.round(x * f * (el.value === 'mm' ? 1 : 100)) / (el.value === 'mm' ? 1 : 100);
+    for (const k of ['margin', 'gap', 'cw', 'ch']) cfg.page[k] = r(cfg.page[k]);
+    fillControls();
+  }
+  if (path === 'page.size') $('#customSize').hidden = cfg.page.size !== 'custom';
+  if (path === 'source.server') { SB = null; }
+  if (path === 'source.lang' && data?.source === 'live' && cfg.source.bodies.length) loadMeetings();
+}
+function bindControls() {
+  $$('[data-path]').forEach(el => {
+    el.addEventListener('input', () => {
+      const path = el.dataset.path; const prev = getPath(cfg, path);
+      setPath(cfg, path, readEl(el, prev)); onPathChange(path, el, prev); syncPreset(); save(); scheduleRender();
+    });
+  });  $$('[data-fplace]').forEach(b => b.addEventListener('click', () => { const sel = $('#fplace'); sel.value = b.dataset.fplace; sel.dispatchEvent(new Event('input')); }));
+}
+function renderBlocks() {
+  const box = $('#blocks'); box.innerHTML = '';
+  cfg.blocks.forEach((b, i) => {
+    const d = document.createElement('div'); d.className = 'blockcard';
+    d.innerHTML = '<div class="bar"><span class="lbl">Block ' + (i + 1) + '</span>' +
+      '<button class="btn small" type="button" data-a="up" aria-label="Move up">↑</button><button class="btn small" type="button" data-a="down" aria-label="Move down">↓</button><button class="btn small danger" type="button" data-a="del">Remove</button></div>' +
+      '<div class="field"><label class="lbl" for="bt' + i + '">Heading</label><input type="text" id="bt' + i + '" data-k="title"></div>' +
+      '<div class="field"><label class="lbl" for="bb' + i + '">Text</label>' + fmtBar('bb' + i) + '<textarea id="bb' + i + '" rows="4" data-k="body"></textarea></div>' +
+      '<div class="row"><div class="field"><label class="lbl" for="bp' + i + '">Place it</label><select id="bp' + i + '" data-k="placement">' +
+      '<option value="front">On the front panel</option><option value="before">Before the meetings</option><option value="after">After the meetings</option><option value="back">Own column at the end</option></select></div>' +
+      '<label class="check" style="align-self:end;padding-bottom:8px"><input type="checkbox" id="bx' + i + '" data-k="boxed"> Draw a box</label></div>' +
+      '<label class="check"><input type="checkbox" id="bn' + i + '" data-k="newCol"> Start in a new column</label>';
+    $$('[data-k]', d).forEach(el => {
+      const k = el.dataset.k; writeEl(el, b[k]);
+      el.addEventListener('input', () => { b[k] = readEl(el, b[k]); save(); scheduleRender(); syncNewCol(); });
+    });
+    function syncNewCol() { d.querySelector('[data-k="newCol"]').closest('label').hidden = b.placement === 'front'; } // the front panel has no columns
+    syncNewCol();
+    d.querySelector('[data-a="up"]').onclick = () => { if (i > 0) { [cfg.blocks[i - 1], cfg.blocks[i]] = [cfg.blocks[i], cfg.blocks[i - 1]]; save(); renderBlocks(); scheduleRender(); } };
+    d.querySelector('[data-a="down"]').onclick = () => { if (i < cfg.blocks.length - 1) { [cfg.blocks[i + 1], cfg.blocks[i]] = [cfg.blocks[i], cfg.blocks[i + 1]]; save(); renderBlocks(); scheduleRender(); } };
+    d.querySelector('[data-a="del"]').onclick = () => { cfg.blocks.splice(i, 1); save(); renderBlocks(); scheduleRender(); };
+    box.appendChild(d);
+  });
+}
+
+function init() {
+  // option lists
+  $('#size').innerHTML = Object.entries(SIZES).map(([k, s]) => '<option value="' + k + '">' + s.n + (s.w ? ' (' + (s.mm ? Math.round(s.w * 25.4) + '×' + Math.round(s.h * 25.4) + ' mm' : s.w + '×' + s.h + ' in') + ')' : '') + '</option>').join('');
+  const fontOpts = Object.keys(FONTS).map(f => '<option>' + f + '</option>').join('');
+  $('#font').innerHTML = fontOpts; $('#head').innerHTML = fontOpts;
+  $('#dayChecks').innerHTML = DAYS.slice(1).map((d, i) => '<label class="check"><input type="checkbox" value="' + (i + 1) + '"> ' + d.slice(0, 3) + '</label>').join('');
+  $$('#dayChecks input').forEach(el => el.addEventListener('input', () => {
+    cfg.source.days = $$('#dayChecks input').filter(x => x.checked).map(x => Number(x.value)); save(); scheduleRender();
+  }));
+  // tokens
+  let lastTpl = $('#template');
+  $$('.tpl').forEach(t => t.addEventListener('focus', () => { lastTpl = t; }));
+  $('#tokens').innerHTML = TOKENS.map(t => '<button type="button" class="tok" data-t="' + t + '">{' + t + '}</button>').join('');
+  $$('#tokens .tok').forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
+  $$('#tokens .tok').forEach(b => b.onclick = () => {
+    const t = lastTpl, ins = '{' + b.dataset.t + '}';
+    const s = t.selectionStart ?? t.value.length, e = t.selectionEnd ?? t.value.length;
+    t.value = t.value.slice(0, s) + ins + t.value.slice(e); t.focus(); t.selectionStart = t.selectionEnd = s + ins.length;
+    t.dispatchEvent(new Event('input'));
+  });
+  $('#timePreset').onchange = e => { const v = e.target.value.replace(/\\n/g, '\n'); if (!v) return; cfg.meetings.timeTpl = v; $('#timeTpl').value = v; e.target.value = ''; save(); scheduleRender(); };
+  $('#tplPreset').onchange = e => { const v = e.target.value; if (!v) return; cfg.meetings.template = TEMPLATES[v]; $('#template').value = cfg.meetings.template; e.target.value = ''; save(); scheduleRender(); };
+  $('#preset').onchange = e => { const p = PRESETS[e.target.value]; if (!p) return syncPreset(); cfg = merge(cfg, p); fillControls(); save(); scheduleRender(); };
+  // tabs
+  $$('.tab').forEach(t => t.onclick = () => {
+    $$('.tab').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    $$('.panel').forEach(p => { p.hidden = p.dataset.panel !== t.dataset.tab; });
+    try { sessionStorage.setItem('sp-tab', t.dataset.tab); } catch {}
+  });
+  try { const tab = sessionStorage.getItem('sp-tab'); if (tab) $('.tab[data-tab="' + tab + '"]')?.click(); } catch {}
+  // source
+  let sbTimer = 0;
+  $('#sbSearch').addEventListener('focus', () => loadBodies().then(renderSbResults));
+  $('#sbSearch').addEventListener('input', () => { clearTimeout(sbTimer); sbTimer = setTimeout(() => loadBodies().then(renderSbResults), 150); });
+  $('#loadBtn').onclick = loadMeetings;
+  // formatting toolbars
+  document.addEventListener('mousedown', e => { if (e.target.closest('.fmtbar button')) e.preventDefault(); });
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.fmtbar button'); if (!btn) return;
+    const t = document.getElementById(btn.closest('.fmtbar').dataset.for); if (t) applyFx(t, btn.dataset.fx);
+  });
+  document.addEventListener('change', e => {
+    if (e.target.matches('.fmtbar input[type="color"]')) { const t = document.getElementById(e.target.closest('.fmtbar').dataset.for); if (t) applyFx(t, 'color', e.target.value); }
+  });
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey) return;
+    const t = e.target; const fx = { b: 'b', i: 'i', u: 'u' }[e.key.toLowerCase()];
+    if (fx && (t.tagName === 'TEXTAREA' || t.tagName === 'INPUT') && document.querySelector('.fmtbar[data-for="' + t.id + '"]')) { e.preventDefault(); applyFx(t, fx); }
+  });
+  $('#srvSearch').addEventListener('focus', () => loadServers().then(() => { renderServerResults(); renderServerStatus(); }));
+  $('#srvSearch').addEventListener('input', () => loadServers().then(renderServerResults));
+  $('#srvSearch').addEventListener('blur', () => { $('#srvResults').innerHTML = ''; });
+  $('#srvSearch').addEventListener('keydown', e => { if (e.key === 'Escape') { e.target.value = ''; e.target.blur(); } });
+  $('#server').addEventListener('change', () => { const v = $('#server').value.trim(); try { typedServers.add(new URL(v).host.toLowerCase()); } catch {} setServer(v); });
+  committedServer = cfg.source.server;
+  loadServers().then(renderServerStatus);
+  $('#sampleBtn').onclick = () => { data = sampleData(); store.set('sp-data', null); $('#loadStatus').className = 'status'; $('#loadStatus').textContent = 'Showing fictional sample meetings.'; scheduleRender(0); };
+  // logo
+  $('#logoFile').onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { cfg.front.logo = r.result; $('#logoStatus').className = 'status'; $('#logoStatus').textContent = f.name; save(); scheduleRender(0); };
+    r.readAsDataURL(f); e.target.value = '';
+  };
+  $('#logoClear').onclick = () => { cfg.front.logo = ''; $('#logoStatus').textContent = ''; save(); scheduleRender(0); };
+  // content
+  $('#addBlock').onclick = () => { cfg.blocks.push({ id: 'b' + Date.now(), title: 'New section', body: 'Your text here.', placement: 'after', boxed: false }); save(); renderBlocks(); scheduleRender(); };
+  $('#starterBlocks').innerHTML = DEFAULTS.blocks.map((b, i) => '<button class="btn" type="button" data-starter="' + i + '">+ ' + esc(b.title) + '</button>').join('');
+  $$('[data-starter]').forEach(btn => btn.onclick = () => { cfg.blocks.push({ ...clone(DEFAULTS.blocks[btn.dataset.starter]), id: 'b' + Date.now() }); save(); renderBlocks(); scheduleRender(); $('#blocks').lastElementChild?.scrollIntoView({ block: 'nearest' }); });
+  $('#blackInk').onclick = () => { cfg.style.accent = '#000000'; fillControls(); save(); scheduleRender(); };
+  // file
+  const fstat = (msg, cls = '') => { const s = $('#fileStatus'); s.className = 'status ' + cls; s.textContent = msg; };
+  const json = () => JSON.stringify(cfg, null, 2);
+  $('#exportBtn').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([json()], { type: 'application/json' }));
+    a.download = 'meetingschedule-settings.json'; document.body.appendChild(a); a.click(); a.remove();
+    $('#settingsText').value = json();
+    fstat(framed ? 'Downloads are blocked in this preview. The settings are in the box below to copy.' : 'Settings file downloaded.', 'ok');
+  };
+  $('#copyBtn').onclick = () => {
+    $('#settingsText').value = json();
+    navigator.clipboard.writeText(json()).then(() => fstat('Settings copied.', 'ok'), () => { $('#settingsText').select(); fstat('Press Ctrl+C or Cmd+C to copy the selected settings.'); });
+  };
+  const applyJson = txt => {
+    try { const o = JSON.parse(txt); if (typeof o !== 'object' || !o) throw 0; cfg = merge(DEFAULTS, o); fillControls(); save(); scheduleRender(0); fstat('Settings loaded.', 'ok'); }
+    catch { fstat("That isn't a MeetingSchedule.app settings file.", 'err'); }
+  };
+  $('#importFile').onchange = e => { const f = e.target.files[0]; if (f) f.text().then(applyJson); e.target.value = ''; };
+  $('#applyText').onclick = () => applyJson($('#settingsText').value);
+  let armed = 0;
+  $('#resetBtn').onclick = e => {
+    if (Date.now() - armed > 4000) { armed = Date.now(); e.target.textContent = 'Click again to reset'; setTimeout(() => { e.target.textContent = 'Reset everything'; }, 4000); return; }
+    cfg = clone(DEFAULTS); store.set('sp-config', null); fillControls(); scheduleRender(0); fstat('Everything is back to the defaults.'); e.target.textContent = 'Reset everything'; armed = 0;
+  };
+  // top bar
+  $('#zoom').onchange = rescale;
+  if (framed) { $('.brand .guide-link').hidden = true; $('.brand h1 a').removeAttribute('href'); }
+  else if (EMBED) $$('.brand a').forEach(a => { a.href = 'https://meetingschedule.app/' + (a.classList.contains('guide-link') ? '#guide' : ''); a.target = '_blank'; a.rel = 'noopener'; });
+  if (framed) { $('#printBtn').hidden = true; $('#docxBtn').hidden = true; $('#xlsxBtn').hidden = true; $('#framedNotice').hidden = false; }
+  $('#printBtn').onclick = () => window.print();
+  $('#docxBtn').onclick = e => runExport(e.currentTarget, exportDocx);
+  $('#xlsxBtn').onclick = e => runExport(e.currentTarget, exportXlsx);
+  window.addEventListener('resize', () => requestAnimationFrame(rescale));
+  if (document.fonts) document.fonts.addEventListener?.('loadingdone', () => scheduleRender(300));
+
+  bindControls(); fillControls(); loadLangs();
+  const cached = store.get('sp-data');
+  data = (cached && !framed) ? cached : sampleData();
+  if (data.source === 'live') $('#loadStatus').textContent = 'Showing meetings saved from your last load. Load again for the latest.';
+  initAccount();
+  render();
+  if (presetLoad) loadMeetings();
+}
+
+/* ---------- accounts, saved lists and share links ---------- */
+// Talks to api/index.php on the same site. Saved lists hold the settings (cfg); meetings always load live from BMLT.
+const API = new URL('../api/', location.href).href;
+let me = null, myLists = [];
+const cur = { get: () => store.get('sp-current') || {}, set: v => store.set('sp-current', v) };
+async function api(action, body, params = '') {
+  const r = await fetch(API + '?a=' + action + params, body ? {
+    method: 'POST', credentials: 'same-origin', body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'meetingschedule' }
+  } : { credentials: 'same-origin' });
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok || !j) throw new Error(j?.error || 'The server did not answer. Try again in a moment.');
+  return j;
+}
+const astat = (msg, cls = '') => { const s = $('#acctStatus'); s.className = 'status ' + cls; s.textContent = msg; };
+const shareLink = t => location.origin + location.pathname + '?list=' + t;
+const busy = async (btn, fn) => { btn.disabled = true; try { await fn(); } catch (e) { astat(e.message, 'err'); } finally { btn.disabled = false; } };
+const openTab = name => $('.tab[data-tab="' + name + '"]')?.click();
+
+function showAccount() {
+  $('#acctBtn').textContent = me ? (me.name || me.email) : 'Sign in';
+  $('#acctOut').hidden = !!me; $('#acctIn').hidden = !me; $('#acctIntro').hidden = !!me;
+  if (!me) return;
+  $('#acctWho').textContent = me.email;
+  const c = cur.get(), mine = myLists.find(l => l.id === c.id);
+  if (c.id && !mine) cur.set({});
+  $('#listName').value = mine ? mine.name : ($('#listName').value || plainText(sc(cfg.front.title)));
+  $('#saveListBtn').textContent = mine ? 'Save changes' : 'Save';
+  $('#saveNewBtn').hidden = !mine;
+  $('#shareBox').hidden = !mine;
+  $('#shareOn').checked = !!mine?.share; $('#shareRow').hidden = !mine?.share;
+  $('#shareUrl').value = mine?.share ? shareLink(mine.share) : '';
+  const ul = $('#myLists'); ul.innerHTML = '';
+  if (!myLists.length) { ul.innerHTML = '<li><span class="nm"><small>No saved lists yet. Name this list and click Save.</small></span></li>'; return; }
+  for (const l of myLists) {
+    const li = document.createElement('li'); if (mine && l.id === mine.id) li.className = 'current';
+    li.innerHTML = '<span class="nm"><b></b><small></small></span><button class="btn small" type="button" data-a="open">Open</button><button class="btn small danger" type="button" data-a="del">Delete</button>';
+    li.querySelector('b').textContent = l.name;
+    li.querySelector('small').textContent = (mine && l.id === mine.id ? 'Open now · ' : '') + (l.share ? 'Shared · ' : '') + 'Saved ' + new Date(l.updated).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+    li.querySelector('[data-a="open"]').onclick = e => busy(e.target, () => openList(l));
+    li.querySelector('[data-a="del"]').onclick = e => busy(e.target, async () => {
+      if (!confirm('Delete "' + l.name + '"? Its share link will stop working. This can\'t be undone.')) return;
+      await api('delete', { id: l.id }); if (cur.get().id === l.id) cur.set({});
+      await refreshLists(); astat('Deleted "' + l.name + '".', 'ok');
+    });
+    ul.appendChild(li);
+  }
+}
+async function refreshLists() { myLists = me ? (await api('lists')).lists : []; showAccount(); }
+async function openList(l) {
+  if (!confirm('Open "' + l.name + '"? It replaces the settings you have open now. Save them first if you want to keep them.')) return;
+  const j = await api('list', null, '&id=' + l.id);
+  cfg = merge(DEFAULTS, j.config || {}); fillControls(); save(); cur.set({ id: l.id });
+  showAccount(); scheduleRender(0); astat('Opened "' + l.name + '".', 'ok');
+  if (cfg.source.bodies.length) loadMeetings();
+}
+async function saveList(asNew) {
+  const name = $('#listName').value.trim();
+  if (!name) { astat('Give the list a name first.', 'err'); $('#listName').focus(); return; }
+  const id = asNew ? 0 : cur.get().id || 0;
+  const row = await api('save', { id, name, config: cfg });
+  cur.set({ id: row.id }); await refreshLists();
+  astat((id ? 'Saved changes to "' : 'Saved "') + name + '".', 'ok');
+}
+async function openShared(token) {
+  viewMode = true; document.body.classList.add('viewing'); $('#viewBar').hidden = false;
+  $('#framedNotice').hidden = true; $('#sheets').style.visibility = 'hidden';
+  try {
+    const j = await api('shared', null, '&t=' + encodeURIComponent(token));
+    cfg = merge(DEFAULTS, j.config || {}); if (cfg.shortcodes.trim() === 'helpline = (555) 010-0199') cfg.shortcodes = ''; fillControls(); data = sampleData();
+    $('#viewName').textContent = j.name; document.title = j.name + ' · MeetingSchedule.app';
+    $('#viewNote').textContent = 'A shared meeting list. Meetings load live from the BMLT server, so it is always current.';
+    $('#sheets').style.visibility = ''; scheduleRender(0);
+    if (cfg.source.bodies.length) await loadMeetings();
+    if (data.source !== 'live') $('#viewNote').textContent = "A shared meeting list. The meetings couldn't be loaded from the BMLT server right now, so example meetings are shown.";
+  } catch (e) {
+    $('#viewName').textContent = 'This list is not available';
+    $('#viewNote').textContent = e.message + ' Ask the person who sent the link for a new one.';
+    $('#copyShared').textContent = 'Start a new list'; $('#sheets').style.visibility = '';
+  }
+}
+function initAccount() {
+  const q = new URLSearchParams(location.search);
+  const token = q.get('list'), reset = q.get('reset');
+  if (token) openShared(token);
+  $('#copyShared').onclick = () => {
+    viewMode = false; document.body.classList.remove('viewing'); $('#viewBar').hidden = true;
+    history.replaceState(null, '', location.pathname); cur.set({});
+    save(); if (data.source === 'live') store.set('sp-data', data);
+    $('#listName').value = ''; showAccount(); rescale();
+    openTab('account'); astat(me ? 'This is now your own copy. Name it and click Save to keep it online.' : 'This is now your own copy. Sign in to save it online, or keep using it in this browser.', 'ok');
+  };
+  if (EMBED) { $('.tab[data-tab="account"]').hidden = true; return; }
+  if (framed || location.protocol === 'file:') { $('#acctIntro').hidden = true; $('#acctUnavailable').hidden = false; return; }
+  $('#acctBtn').hidden = false;
+  $('#acctBtn').onclick = () => openTab('account');
+  let mode = 'login';
+  const setMode = m => {
+    mode = m; $$('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+    $('#nameField').hidden = m !== 'signup'; $('#authSubmit').textContent = m === 'signup' ? 'Create account' : 'Sign in';
+    $('#authPass').autocomplete = m === 'signup' ? 'new-password' : 'current-password'; astat('');
+  };
+  $$('.seg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  $('#authForm').onsubmit = e => { e.preventDefault(); busy($('#authSubmit'), async () => {
+    const body = { email: $('#authEmail').value.trim(), password: $('#authPass').value };
+    if (mode === 'signup') body.name = $('#authName').value.trim();
+    me = (await api(mode, body)).user; $('#authPass').value = '';
+    await refreshLists(); astat(mode === 'signup' ? 'Your account is ready. Name this list and click Save.' : 'Signed in.', 'ok');
+  }); };
+  $('#forgotLink').onclick = () => { $('#authForm').hidden = true; $('.seg').hidden = true; $('#forgotForm').hidden = false; $('#forgotEmail').value = $('#authEmail').value; astat(''); };
+  $('#forgotBack').onclick = () => { $('#authForm').hidden = false; $('.seg').hidden = false; $('#forgotForm').hidden = true; astat(''); };
+  $('#forgotForm').onsubmit = e => { e.preventDefault(); busy(e.submitter || $('#forgotForm button'), async () => {
+    await api('forgot', { email: $('#forgotEmail').value.trim() });
+    astat('If there is an account for that email, a reset link is on its way. Check your inbox and spam folder.', 'ok');
+  }); };
+  $('#resetForm').onsubmit = e => { e.preventDefault(); busy(e.submitter || $('#resetForm button'), async () => {
+    me = (await api('reset', { token: reset, password: $('#resetPass').value })).user;
+    history.replaceState(null, '', location.pathname); $('#resetForm').hidden = true; $('#authForm').hidden = false; $('.seg').hidden = false;
+    await refreshLists(); astat('Your new password is saved and you are signed in.', 'ok');
+  }); };
+  $('#logoutBtn').onclick = e => busy(e.target, async () => { await api('logout', {}); me = null; myLists = []; cur.set({}); setMode('login'); showAccount(); astat('Signed out.'); });
+  $('#saveListBtn').onclick = e => busy(e.target, () => saveList(false));
+  $('#saveNewBtn').onclick = e => busy(e.target, () => saveList(true));
+  $('#shareOn').onchange = e => busy(e.target, async () => {
+    const row = await api('share', { id: cur.get().id, on: e.target.checked }); await refreshLists();
+    astat(row.share ? 'Share link is on. Copy it and send it to anyone.' : 'Share link is off. The old link no longer works.', 'ok');
+  });
+  $('#shareCopy').onclick = () => { const i = $('#shareUrl'); navigator.clipboard.writeText(i.value).then(() => astat('Link copied.', 'ok'), () => { i.select(); astat('Press Ctrl+C or Cmd+C to copy the link.'); }); };
+  $('#pwForm').onsubmit = e => { e.preventDefault(); busy(e.submitter || $('#pwForm button'), async () => {
+    await api('password', { current: $('#pwCur').value, password: $('#pwNew').value });
+    $('#pwCur').value = $('#pwNew').value = ''; astat('Password changed.', 'ok');
+  }); };
+  if (reset) { openTab('account'); $('#authForm').hidden = true; $('.seg').hidden = true; $('#resetForm').hidden = false; }
+  api('me').then(async j => { me = j.user; if (me) await refreshLists(); else showAccount(); })
+    .catch(e => { showAccount(); $('#acctOut').hidden = false; astat(e.message, 'err'); });
+}
+init();
+
+/* ---------- Word and Excel export ---------- */
+const LIBS = {
+  jszip: 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
+  xlsx: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+};
+const loaded = {};
+function loadLib(name) {
+  return loaded[name] ??= new Promise((resolve, reject) => {
+    const s = document.createElement('script'); s.src = LIBS[name];
+    s.onload = resolve; s.onerror = () => { delete loaded[name]; reject(new Error('Could not load the ' + name + ' library. Check your internet connection.')); };
+    document.head.appendChild(s);
+  });
+}
+function saveBlob(blob, filename) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
+function exportName(ext) {
+  const base = (plainText(sc(cfg.front.title)) || 'meeting-schedule').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'meeting-schedule';
+  return base + '.' + ext;
+}
+const xesc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const hex = c => (/^#[0-9a-f]{6}$/i.test(c || '') ? c.slice(1).toUpperCase() : '000000');
+
+// Turns the small HTML the templates produce (<b>, <i>, <br>, <div>, <li>) into Word runs.
+function runsFrom(node, rpr = {}, out = []) {
+  for (const n of node.childNodes) {
+    if (n.nodeType === 3) {
+      if (!n.nodeValue) continue;
+      const p = (rpr.b ? '<w:b/>' : '') + (rpr.i ? '<w:i/>' : '') + (rpr.u ? '<w:u w:val="single"/>' : '') + (rpr.s ? '<w:strike/>' : '') + (rpr.color ? '<w:color w:val="' + rpr.color + '"/>' : '') + (rpr.sz ? '<w:sz w:val="' + rpr.sz + '"/>' : '');
+      out.push('<w:r>' + (p ? '<w:rPr>' + p + '</w:rPr>' : '') + '<w:t xml:space="preserve">' + xesc(n.nodeValue) + '</w:t></w:r>');
+    } else if (n.nodeType === 1) {
+      const tag = n.tagName;
+      if (tag === 'BR') { out.push('<w:r><w:br/></w:r>'); continue; }
+      if (tag === 'SPAN' && n.classList.contains('fill')) { out.push('<w:r><w:rPr><w:position w:val="-4"/><w:u w:val="single"/></w:rPr><w:tab/></w:r>'); continue; } // underlined tab to the column's right edge, lowered 2pt
+      const block = tag === 'DIV' || tag === 'LI' || tag === 'P' || tag === 'H4' || (tag === 'SPAN' && n.classList.contains('fline'));
+      if (block && out.length && !/<w:br\/><\/w:r>$/.test(out[out.length - 1])) out.push('<w:r><w:br/></w:r>');
+      if (tag === 'LI') out.push('<w:r><w:t xml:space="preserve">• </w:t></w:r>');
+      const next = { ...rpr, b: rpr.b || tag === 'B' || tag === 'STRONG' || tag === 'H4', i: rpr.i || tag === 'I' || tag === 'EM', u: rpr.u || tag === 'U', s: rpr.s || tag === 'S' };
+      if (tag === 'SPAN') {
+        const base = rpr.sz || Math.round((Number(cfg.style.size) || 8) * 2);
+        if (n.classList.contains('fx-big')) next.sz = Math.round(base * 1.3);
+        if (n.classList.contains('fx-small')) next.sz = Math.round(base * 0.85);
+        const c = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(n.style.color ? rgbHex(n.style.color) : '');
+        if (c) next.color = c[1].length === 3 ? c[1].replace(/./g, x => x + x).toUpperCase() : c[1].toUpperCase();
+      }
+      runsFrom(n, next, out);
+      if (tag === 'SPAN' && n.classList.contains('fline') && n.nextSibling) out.push('<w:r><w:br/></w:r>');
+    }
+  }
+  return out;
+}
+const rgbHex = c => { const m = /rgb\((\d+),\s*(\d+),\s*(\d+)/.exec(c); return m ? '#' + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, '0')).join('') : c; };
+const fromHtml = (html, rpr) => { const d = document.createElement('div'); d.innerHTML = html; return runsFrom(d, rpr).join(''); };
+const para = (runs, ppr = '') => '<w:p>' + (ppr ? '<w:pPr>' + ppr + '</w:pPr>' : '') + runs + '</w:p>';
+
+async function imagePart(dataUrl) {
+  const m = /^data:image\/(png|jpe?g|gif);base64,(.+)$/i.exec(dataUrl || '');
+  if (!m) return null;
+  const img = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.onerror = () => r(null); i.src = dataUrl; });
+  if (!img || !img.naturalWidth) return null;
+  const w = Math.min(2, img.naturalWidth / 96), h = w * img.naturalHeight / img.naturalWidth;
+  return { ext: m[1].toLowerCase().replace('jpeg', 'jpg'), b64: m[2], cx: Math.round(w * 914400), cy: Math.round(h * 914400) };
+}
+function imageRun(im) {
+  return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + im.cx + '" cy="' + im.cy + '"/><wp:docPr id="1" name="Logo"/>' +
+    '<a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture">' +
+    '<pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="1" name="logo"/><pic:cNvPicPr/></pic:nvPicPr>' +
+    '<pic:blipFill><a:blip r:embed="rIdLogo"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + im.cx + '" cy="' + im.cy + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic>' +
+    '</a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+}
+
+async function exportDocx() {
+  await loadLib('jszip');
+  clearTimeout(renderTimer); await render(); // the front panel's spacing below is measured from the preview
+  const meet = currentMeetings(); const flow = buildFlow(meet);
+  const st = cfg.style, dim = pageDims(), tw = v => Math.round(v * 1440);
+  const size = Number(st.size) || 8, hp = Math.round(size * 2);
+  const accent = hex(st.accent), space = Math.round((Number(st.space) || 0) * 20);
+  const ncol = Math.max(1, Math.min(8, Math.round(cfg.page.columns) || 1));
+  const timeIndent = Math.round((Number(cfg.meetings.timeW) || 4) * size * 23); // a little wider than the preview, since Word may substitute a wider font
+  const sepBorder = st.sep === 'none' ? '' : '<w:pBdr><w:top w:val="' + (st.sep === 'dotted' ? 'dotted' : 'single') + '" w:sz="2" w:space="2" w:color="999999"/></w:pBdr>';
+  const body = [];
+  const textW = (dim.w - 2 * (toIn(cfg.page.margin) || 0) - (ncol - 1) * (toIn(cfg.page.gap) || 0)) / ncol;
+  const fillTab = inset => '<w:tabs><w:tab w:val="right" w:pos="' + (tw(textW) - inset) + '"/></w:tabs>'; // where write-in lines end
+  let prevMtg = false;
+
+  // front page or panel
+  const fp = cfg.front.placement;
+  let logo = null;
+  const frontXml = [];
+  if (fp !== 'none') {
+    const body = frontXml;
+    const f = cfg.front, center = '<w:jc w:val="center"/>';
+    if (f.logo) { logo = await imagePart(f.logo); if (logo) body.push(para(imageRun(logo), center)); }
+    if (f.title) body.push(para(fromHtml(inlineMd(esc(sc(f.title))), { sz: Math.round(hp * (Number(cfg.front.titleScale) || 3)) }), '<w:pStyle w:val="Title"/>' + center));
+    if (f.subtitle) body.push(para(fromHtml(inlineMd(esc(sc(f.subtitle))), { sz: Math.round(hp * 1.3) }), '<w:spacing w:after="160"/>' + center));
+    paragraphs(f.body, flow.vars).forEach(p => body.push(para(fromHtml(p), '<w:spacing w:after="100"/>' + center)));
+    const extra = [];
+    cfg.blocks.filter(b => b.placement === 'front').forEach(b => extra.push(...blockItems(b, flow.vars)));
+    if (cfg.meetings.legend === 'front') extra.push(...legendItems(meet.formats, 1)); // Word: tables can't sit inside the front panel's frame
+    extra.forEach(it => body.push(itemXml(it)));
+  }
+  const brk = t => para('<w:r><w:br w:type="' + t + '"/></w:r>');
+
+  function itemXml(it) {
+    const d = document.createElement('div'); d.innerHTML = it.html;
+    const cls = it.cls;
+    const wasMtg = prevMtg; prevMtg = false;
+    if (cls.includes('h0')) return para(fromHtml(it.html), '<w:pStyle w:val="Heading1"/>');
+    if (cls.includes('h1')) return para(fromHtml(d.textContent), '<w:pStyle w:val="Heading2"/>');
+    if (cls.includes('h2')) return para(fromHtml(it.html), '<w:pStyle w:val="Heading3"/>');
+    if (cls.includes('bt')) return para(fromHtml(it.html), '<w:pStyle w:val="BlockTitle"/>');
+    if (cls.includes('mtg')) {
+      prevMtg = true;
+      const time = d.querySelector('.mtg-time'), lines = d.querySelector('.mtg-body');
+      const bdr = wasMtg ? sepBorder : '';
+      const sp = '<w:spacing w:before="' + Math.round(space / 2) + '" w:after="' + Math.round(space / 2) + '"/>';
+      const tl = time ? [...time.children] : [];
+      if (tl.length > 1) { // stacked time column: one paragraph per line, time line i beside detail line i
+        const bl = lines ? [...lines.children] : [], n = Math.max(tl.length, bl.length), sub = Math.round(hp * 0.88);
+        let x = '';
+        for (let i = 0; i < n; i++) {
+          const half = Math.round(space / 2);
+          const ppr = (i < n - 1 ? '<w:keepNext/>' : '') + '<w:keepLines/>' + (i ? '' : bdr) + '<w:tabs><w:tab w:val="left" w:pos="' + timeIndent + '"/></w:tabs>' +
+            '<w:spacing w:before="' + (i ? 0 : half) + '" w:after="' + (i < n - 1 ? 0 : half) + '"/><w:ind w:left="' + timeIndent + '" w:hanging="' + timeIndent + '"/>';
+          const tr = tl[i] ? (i ? runsFrom(tl[i], { sz: sub }).join('') : fromHtml(tl[i].innerHTML, { b: true })) : '';
+          x += para(tr + '<w:r><w:tab/></w:r>' + (bl[i] ? runsFrom(bl[i]).join('') : ''), ppr);
+        }
+        return x;
+      }
+      if (time) {
+        const ppr = '<w:keepLines/>' + bdr + '<w:tabs><w:tab w:val="left" w:pos="' + timeIndent + '"/></w:tabs>' + sp + '<w:ind w:left="' + timeIndent + '" w:hanging="' + timeIndent + '"/>';
+        return para(fromHtml(time.innerHTML, { b: true }) + '<w:r><w:tab/></w:r>' + runsFrom(lines).join(''), ppr);
+      }
+      return para(runsFrom(lines || d).join(''), '<w:keepLines/>' + bdr + sp);
+    }
+    if (cls.includes('boxed')) {
+      const t = d.querySelector('.btitle'); if (t) t.remove();
+      const box = '<w:pBdr>' + ['top', 'left', 'bottom', 'right'].map(s => '<w:' + s + ' w:val="single" w:sz="6" w:space="4" w:color="' + accent + '"/>').join('') + '</w:pBdr>';
+      return para((t ? fromHtml('<b>' + t.innerHTML + '</b>', { color: accent }) + '<w:r><w:br/></w:r>' : '') + runsFrom(d).join(''), '<w:keepLines/>' + box + fillTab(160) + '<w:spacing w:before="160" w:after="80"/>');
+    }
+    if (cls.includes('lgrow')) { // borderless one-row table: code and name for each cell
+      const m = toIn(cfg.page.margin) || 0, g = toIn(cfg.page.gap) || 0;
+      const colW = Math.round(((dim.w - 2 * m - (ncol - 1) * g) / ncol) * 1440);
+      const cells = [...d.querySelectorAll('.lg')], codeW = Math.round(2.8 * size * 20), cw = Math.floor(colW / cells.length), nameW = Math.max(200, cw - codeW);
+      const tc = (w, runs) => '<w:tc><w:tcPr><w:tcW w:w="' + w + '" w:type="dxa"/></w:tcPr>' + para(runs, '<w:spacing w:before="20"/>') + '</w:tc>';
+      return '<w:tbl><w:tblPr><w:tblW w:w="' + (cw * cells.length) + '" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblCellMar><w:left w:w="0" w:type="dxa"/><w:right w:w="60" w:type="dxa"/></w:tblCellMar></w:tblPr>' +
+        '<w:tblGrid>' + cells.map(() => '<w:gridCol w:w="' + codeW + '"/><w:gridCol w:w="' + nameW + '"/>').join('') + '</w:tblGrid><w:tr><w:trPr><w:cantSplit/></w:trPr>' +
+        cells.map(c => { const b = c.querySelector('b'), sp = c.querySelector('span'); return tc(codeW, b ? fromHtml('<b>' + b.innerHTML + '</b>') : '') + tc(nameW, sp ? runsFrom(sp).join('') : ''); }).join('') +
+        '</w:tr></w:tbl>';
+    }
+    if (cls.includes('lg')) return para(runsFrom(d).join('').replace('</w:r>', '</w:r><w:r><w:tab/></w:r>'), '<w:tabs><w:tab w:val="left" w:pos="' + Math.round(2.8 * size * 20) + '"/></w:tabs><w:ind w:left="' + Math.round(2.8 * size * 20) + '" w:hanging="' + Math.round(2.8 * size * 20) + '"/>');
+    return para(runsFrom(d).join(''), fillTab(0) + '<w:spacing w:before="60"/>');
+  }
+  if (fp === 'none' || fp === 'first' || fp === 'page') {
+    // front first, then let Word flow the rest
+    if (frontXml.length) { body.push(...frontXml); body.push(brk(fp === 'page' || ncol === 1 ? 'page' : 'column')); }
+    for (const it of flow.items) {
+      if (it.breakBefore) body.push(brk('column'));
+      body.push(itemXml(it));
+    }
+  } else if (ncol === 1) { // one column: the front is a page of its own
+    if (fp === 'last') body.push(...frontXml, brk('page'));
+    flow.items.forEach(it => body.push(itemXml(it)));
+    if (fp === 'back') body.push(brk('page'), ...frontXml);
+  } else {
+    // Last column of page 1 or of the last page: the front goes in a frame over that column and the
+    // meetings wrap around it, so it stays put even when Word's text runs longer than the preview.
+    const m = toIn(cfg.page.margin) || 0, g = toIn(cfg.page.gap) || 0;
+    const colW = (dim.w - 2 * m - (ncol - 1) * g) / ncol;
+    const fEl = sheets.map(sh => sh.front).find(Boolean), first = fEl && fEl.firstElementChild;
+    const top = first ? Math.max(0, Math.round((first.getBoundingClientRect().top - fEl.getBoundingClientRect().top) / (fEl.getBoundingClientRect().height || 1) * (dim.h - 2 * m) * 1440)) : 0;
+    const fr = '<w:framePr w:w="' + tw(colW) + '" w:h="' + tw(dim.h - 2 * m) + '" w:hRule="exact" w:wrap="around" w:hSpace="' + Math.round(tw(g) / 2) + '" w:vAnchor="page" w:hAnchor="page" w:x="' + tw(m + (ncol - 1) * (colW + g)) + '" w:y="' + tw(m) + '"/>';
+    const framed = frontXml.map((x, i) => {
+      x = x.replace(/^<w:p>(?!<w:pPr>)/, '<w:p><w:pPr></w:pPr>');
+      x = x.replace(/^<w:p><w:pPr>((?:<w:pStyle [^>]*\/>)?(?:<w:keepNext\/>)?(?:<w:keepLines\/>)?)/, '<w:p><w:pPr>$1' + fr);
+      if (i === 0 && top) x = /<w:spacing /.test(x) ? x.replace('<w:spacing ', '<w:spacing w:before="' + top + '" ') : x.replace(fr, fr + '<w:spacing w:before="' + top + '"/>');
+      return x;
+    });
+    if (fp === 'last') body.push(...framed);
+    for (const it of flow.items) {
+      if (it.breakBefore) body.push(brk('column'));
+      body.push(itemXml(it));
+    }
+    if (fp === 'back') body.push(...framed);
+  }
+
+  if (/<\/w:tbl>$/.test(body[body.length - 1] || '')) body.push(para('')); // Word wants a paragraph after a table at the end
+  const font = st.font, head = st.head, lh = Math.round((Number(st.lh) || 1.2) * 240);
+  const m = tw(Math.max(0, toIn(cfg.page.margin) || 0)), gap = tw(Math.max(0, toIn(cfg.page.gap) || 0));
+  const sect = '<w:sectPr><w:pgSz w:w="' + tw(dim.w) + '" w:h="' + tw(dim.h) + '"' + (dim.w > dim.h ? ' w:orient="landscape"' : '') + '/>' +
+    '<w:pgMar w:top="' + m + '" w:right="' + m + '" w:bottom="' + m + '" w:left="' + m + '" w:header="0" w:footer="0" w:gutter="0"/>' +
+    '<w:cols w:num="' + ncol + '" w:space="' + gap + '"' + (cfg.page.rule ? ' w:sep="1"' : '') + '/></w:sectPr>';
+  const doc = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing">' +
+    '<w:body>' + body.join('') + sect + '</w:body></w:document>';
+  const rf = f => '<w:rFonts w:ascii="' + xesc(f) + '" w:hAnsi="' + xesc(f) + '" w:cs="' + xesc(f) + '"/>';
+  const bar = st.hstyle === 'bar';
+  const styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+    '<w:docDefaults><w:rPrDefault><w:rPr>' + rf(font) + '<w:sz w:val="' + hp + '"/><w:szCs w:val="' + hp + '"/></w:rPr></w:rPrDefault>' +
+    '<w:pPrDefault><w:pPr><w:spacing w:before="0" w:after="0" w:line="' + lh + '" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="120" w:line="240" w:lineRule="auto"/></w:pPr><w:rPr>' + rf(head) + '<w:b/><w:color w:val="' + accent + '"/><w:sz w:val="' + Math.round(hp * (Number(cfg.front.titleScale) || 3)) + '"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="60"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr>' + rf(head) + '<w:b/><w:caps/><w:color w:val="' + accent + '"/><w:sz w:val="' + Math.round(hp * 1.7) + '"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="160" w:after="40"/>' +
+      (bar ? '<w:shd w:val="clear" w:color="auto" w:fill="' + accent + '"/>' : st.hstyle === 'rule' ? '<w:pBdr><w:bottom w:val="single" w:sz="8" w:space="1" w:color="' + accent + '"/></w:pBdr>' : '') +
+      '<w:outlineLvl w:val="1"/></w:pPr><w:rPr>' + rf(head) + '<w:b/>' + (st.hstyle === 'caps' ? '<w:caps/><w:spacing w:val="20"/>' : '') + '<w:color w:val="' + (bar ? 'FFFFFF' : accent) + '"/><w:sz w:val="' + Math.round(hp * (st.hstyle === 'caps' ? 1.15 : 1.35)) + '"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="B5B5B5"/></w:pBdr><w:spacing w:before="100" w:after="20"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr>' + rf(head) + '<w:b/><w:color w:val="' + accent + '"/><w:sz w:val="' + Math.round(hp * 1.08) + '"/></w:rPr></w:style>' +
+    '<w:style w:type="paragraph" w:styleId="BlockTitle"><w:name w:val="Block Title"/><w:basedOn w:val="Normal"/><w:next w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="160" w:after="20"/></w:pPr><w:rPr>' + rf(head) + '<w:b/><w:color w:val="' + accent + '"/><w:sz w:val="' + Math.round(hp * 1.2) + '"/></w:rPr></w:style>' +
+    '</w:styles>';
+  const zip = new JSZip();
+  zip.file('[Content_Types].xml', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+    '<Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>');
+  zip.file('_rels/.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
+  zip.file('word/_rels/document.xml.rels', '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+    (logo ? '<Relationship Id="rIdLogo" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/logo.' + logo.ext + '"/>' : '') + '</Relationships>');
+  zip.file('word/document.xml', doc);
+  zip.file('word/styles.xml', styles);
+  if (logo) zip.file('word/media/logo.' + logo.ext, logo.b64, { base64: true });
+  const blob = await zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  saveBlob(blob, exportName('docx'));
+  return blob;
+}
+
+async function exportXlsx() {
+  await loadLib('xlsx');
+  const meet = currentMeetings();
+  const ws0 = Number(cfg.meetings.weekStart) || 1, ord = d => (d - ws0 + 7) % 7;
+  const list = meet.list.slice().sort((a, b) => ord(a.day) - ord(b.day) || a.start - b.start || a.vals.name.localeCompare(b.vals.name));
+  const cols = [['Day', 'day', 11], ['Start', 'time', 10], ['End', 'end_time', 10], ['Meeting', 'name', 30], ['Type', 'venue', 10], ['Location', 'location', 28],
+    ['Street', 'street', 26], ['City', 'city', 16], ['State', 'state', 7], ['Zip', 'zip', 8], ['Location info', 'info', 28], ['Formats', 'formats', 14],
+    ['Format names', 'format_names', 32], ['Online link', 'link', 30], ['Phone', 'phone', 18], ['Online details', 'virtual_info', 24], ['Notes', 'comments', 30], ['Service body', 'service_body', 22]];
+  const rows = [cols.map(c => c[0]), ...list.map(m => cols.map(c => m.vals[c[1]] || ''))];
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = cols.map(c => ({ wch: c[2] }));
+  ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: rows.length - 1, c: cols.length - 1 } }) };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Meetings');
+  const fr = [['Code', 'Name', 'Description'], ...meet.formats.map(f => [f.key_string, f.name_string || '', f.description_string || ''])];
+  const fws = XLSX.utils.aoa_to_sheet(fr); fws['!cols'] = [{ wch: 8 }, { wch: 24 }, { wch: 60 }];
+  XLSX.utils.book_append_sheet(wb, fws, 'Formats');
+  const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const blob = new Blob([out], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  saveBlob(blob, exportName('xlsx'));
+  return blob;
+}
+async function runExport(btn, fn) {
+  const label = btn.textContent; btn.disabled = true; btn.textContent = 'Preparing…';
+  try { await fn(); } catch (e) { $('#pageCount').textContent = e.message || 'Export failed.'; }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+
+// exposed for embedding in a hosted service later
+window.MeetingSchedule = window.SchedulePress = { getConfig: () => clone(cfg), setConfig: o => { cfg = merge(DEFAULTS, o); fillControls(); save(); scheduleRender(0); }, setData: d => { data = d; scheduleRender(0); }, render, exportDocx, exportXlsx };
+})();
+</script>
