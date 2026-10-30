@@ -1,23 +1,25 @@
 # MeetingSchedule.app for WordPress
 
-A WordPress plugin that puts the [MeetingSchedule.app](https://meetingschedule.app/) builder on any page. It pulls meetings from a BMLT server and turns them into print-ready schedules.
+A WordPress plugin for [MeetingSchedule.app](https://meetingschedule.app/). The builder runs in wp-admin, and a shortcode gives visitors the schedule as a PDF, Word or Excel file, with live meetings from your BMLT server.
 
 ## Install
 
 1. Download `meeting-schedule.zip` from the latest release, or build it (below).
-2. In WordPress, go to **Plugins → Add New → Upload Plugin**, choose the zip and activate it.
-3. Optional: under **Settings → Meeting Schedule**, enter the BMLT server and service body IDs that first-time visitors start with.
-4. Add `[meeting_schedule]` to a page.
-
-Each shortcode can override the settings:
+2. In WordPress, go to **Plugins > Add New > Upload Plugin**, choose the zip and activate it.
+3. Open **Meeting Schedule** in the admin menu, build the schedule and click **Save for downloads**.
+4. Add a shortcode to a page:
 
 ```
-[meeting_schedule server="https://example.org/main_server/" services="12,34" height="900px"]
+[meeting_schedule]                    PDF, Word and Excel buttons
+[meeting_schedule format="pdf"]       just one button: pdf, word or excel
+[meeting_schedule format="word" label="Download the meeting list"]
 ```
 
 ## How it works
 
-The builder is the same single-page app as meetingschedule.app (`meeting-schedule/app/index.html`). The shortcode shows it in a frame on your own site, so your theme's styles can't change it and printing prints only the schedule. It is opened with `?embed=1`, which hides online accounts (those live on meetingschedule.app) and points the Guide link to meetingschedule.app. Each visitor's settings are kept in their own browser.
+The builder is the same single-page app as meetingschedule.app (`meeting-schedule/app/index.html`), opened with `?embed=1` in a frame on the admin page. **Save for downloads** stores its settings in the `meeting_schedule_schedule` option through admin-ajax (nonce plus `manage_options`).
+
+On the public side, `assets/public.js` opens the same app off screen when someone clicks a button. It calls `MeetingSchedule.output(settings, format)`, which loads live meetings without touching the visitor's own saved settings. PDF opens the print dialog with the finished schedule. Word and Excel come back as files and are downloaded. This needs app version 1.1.0 or later (SaaS-Meeting-Schedule PR #28).
 
 ## Updating the app
 

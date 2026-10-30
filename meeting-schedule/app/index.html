@@ -1671,7 +1671,9 @@ function loadLib(name) {
     document.head.appendChild(s);
   });
 }
+let keepFiles = false; // true while making a file for the page around this one, which saves it itself
 function saveBlob(blob, filename) {
+  if (keepFiles) return;
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
 }
@@ -1916,7 +1918,22 @@ async function runExport(btn, fn) {
   finally { btn.disabled = false; btn.textContent = label; }
 }
 
+// The WordPress plugin's download buttons: open saved settings without keeping them, load live meetings, then
+// print (pdf) or hand back the Word or Excel file as { blob, name }. The settings come from the site's own admin,
+// so their server may use JSONP like one typed in here.
+async function output(o, format) {
+  viewMode = true; cfg = merge(DEFAULTS, o || {}); fillControls(); data = sampleData();
+  try { typedServers.add(new URL(apiBase(cfg.source.server)).host.toLowerCase()); } catch {}
+  await loadMeetings();
+  if (data.source !== 'live') throw new Error(cfg.source.bodies.length ? "The meetings couldn't be loaded right now. Please try again later." : 'No service bodies are picked for this schedule yet.');
+  clearTimeout(renderTimer); await render();
+  if (format === 'pdf') { window.print(); return null; }
+  const ext = format === 'xlsx' ? 'xlsx' : 'docx';
+  keepFiles = true;
+  try { return { blob: await (ext === 'xlsx' ? exportXlsx : exportDocx)(), name: exportName(ext) }; } finally { keepFiles = false; }
+}
+
 // exposed for embedding in a hosted service later
-window.MeetingSchedule = window.SchedulePress = { getConfig: () => clone(cfg), setConfig: o => { cfg = merge(DEFAULTS, o); fillControls(); save(); scheduleRender(0); }, setData: d => { data = d; scheduleRender(0); }, render, exportDocx, exportXlsx };
+window.MeetingSchedule = window.SchedulePress = { getConfig: () => clone(cfg), setConfig: o => { cfg = merge(DEFAULTS, o); fillControls(); save(); scheduleRender(0); }, setData: d => { data = d; scheduleRender(0); }, render, exportDocx, exportXlsx, output };
 })();
 </script>
